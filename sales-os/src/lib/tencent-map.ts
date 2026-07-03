@@ -4,8 +4,7 @@
  * 职责：
  * 1. 封装 5 个 WebService API（搜索 / 地址 / 逆地址 / 路线 / IP 定位）
  * 2. polyline 压缩数组解压 → [[lat,lng], ...]
- * 3. 配额监控 header (X-LIMIT) 日志
- * 4. 错误统一抛 TMapError
+ * 3. 错误统一抛 TMapError
  *
  * 文档：https://lbs.qq.com/service/webService/webServiceGuide/overview
  */

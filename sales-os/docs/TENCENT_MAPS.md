@@ -129,7 +129,7 @@ for (let i = 2; i < coors.length; i++) {
 | 路线 | 6000 | 步行 ≤300km，骑行 ≤500km |
 | IP 定位 | 6000 | — |
 
-配额监控：每次响应 header `X-LIMIT` 含 `current_qps/limit_qps/current_pv/limit_pv`，后端 `console.log` 打印。
+配额信息：腾讯位置服务响应 header `X-LIMIT` 可用于后续接入监控，目前后端不再默认打印。
 
 ## 10. 错误码
 

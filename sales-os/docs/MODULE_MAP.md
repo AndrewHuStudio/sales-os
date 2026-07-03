@@ -271,7 +271,7 @@ types/index.ts + constants.ts  ← 叶子
 2. **三层兜底** - 静态部署也能用真实数据（配 NEXT_PUBLIC_KEY）或 mock
 3. **polyline 后端解压** - 前端零计算，maplibre 直接画线
 4. **数据源标签** - `from: 'tencent-map' | 'mock'`，前端透明显示
-5. **配额监控** - 后端 `console.log` 打印 `X-LIMIT` 响应头
+5. **配额监控预留** - 腾讯位置服务 `X-LIMIT` 响应头可按需接入正式监控
 
 ---
 
