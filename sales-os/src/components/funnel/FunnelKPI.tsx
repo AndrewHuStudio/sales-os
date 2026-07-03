@@ -5,12 +5,14 @@ import { Target, DollarSign, TrendingUp, Award } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { FUNNEL_TOTAL } from '@/lib/data/funnel';
 
-export function FunnelKPI() {
+type FunnelTotal = typeof FUNNEL_TOTAL;
+
+export function FunnelKPI({ total = FUNNEL_TOTAL }: { total?: FunnelTotal }) {
   const items = [
-    { label: '总线索', value: FUNNEL_TOTAL.totalLeads, unit: '家', icon: <Target className="h-4 w-4" />, color: 'text-primary' },
-    { label: '总金额', value: FUNNEL_TOTAL.totalAmount, unit: '万', icon: <DollarSign className="h-4 w-4" />, color: 'text-cyan-500' },
-    { label: '赢率', value: FUNNEL_TOTAL.winRate, unit: '%', icon: <Award className="h-4 w-4" />, color: 'text-success' },
-    { label: '平均成交', value: FUNNEL_TOTAL.avgDealSize, unit: '万', icon: <TrendingUp className="h-4 w-4" />, color: 'text-warning' },
+    { label: '总线索', value: total.totalLeads, unit: '家', icon: <Target className="h-4 w-4" />, color: 'text-primary' },
+    { label: '总金额', value: total.totalAmount, unit: '万', icon: <DollarSign className="h-4 w-4" />, color: 'text-cyan-500' },
+    { label: '赢率', value: total.winRate, unit: '%', icon: <Award className="h-4 w-4" />, color: 'text-success' },
+    { label: '平均成交', value: total.avgDealSize, unit: '万', icon: <TrendingUp className="h-4 w-4" />, color: 'text-warning' },
   ];
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

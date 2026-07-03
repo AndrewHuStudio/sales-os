@@ -4,10 +4,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { REVIEW_METRICS } from '@/lib/data/review';
+import type { ReviewMetric } from '@/types';
 
-export function DailyTrend() {
-  const last7 = REVIEW_METRICS.slice(0, 7).reverse();
-  const max = Math.max(...last7.map(m => m.visits));
+export function DailyTrend({ metrics = REVIEW_METRICS }: { metrics?: ReviewMetric[] }) {
+  const last7 = metrics.slice(0, 7).reverse();
+  const max = Math.max(1, ...last7.map(m => m.visits));
   return (
     <Card>
       <CardHeader className="pb-2">

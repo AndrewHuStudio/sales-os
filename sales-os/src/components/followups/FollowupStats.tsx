@@ -4,12 +4,13 @@
 import { Calendar, TrendingUp, Smile, Frown } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { FOLLOWUPS } from '@/lib/data/followups';
+import type { Followup } from '@/types';
 
-export function FollowupStats() {
-  const total = FOLLOWUPS.length;
-  const positive = FOLLOWUPS.filter(f => f.mood === '正面').length;
-  const rate = Math.round((positive / total) * 100);
-  const thisWeek = FOLLOWUPS.filter(f => {
+export function FollowupStats({ followups = FOLLOWUPS }: { followups?: Followup[] }) {
+  const total = followups.length;
+  const positive = followups.filter(f => f.mood === '正面').length;
+  const rate = total > 0 ? Math.round((positive / total) * 100) : 0;
+  const thisWeek = followups.filter(f => {
     const d = new Date(f.happenedAt);
     const now = new Date();
     return (now.getTime() - d.getTime()) < 7 * 24 * 3600 * 1000;

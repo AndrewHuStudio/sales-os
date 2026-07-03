@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { relativeTime, formatDate } from '@/lib/utils';
 import { FOLLOWUPS } from '@/lib/data/followups';
-import { getCompany } from '@/lib/data/companies';
+import { COMPANIES } from '@/lib/data/companies';
+import type { Company, Followup } from '@/types';
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
   拜访: <MapPin className="h-3 w-3" />, 电话: <Phone className="h-3 w-3" />,
@@ -20,8 +21,8 @@ const MOOD_VARIANT: Record<string, 'success' | 'muted' | 'destructive'> = {
   正面: 'success', 中性: 'muted', 负面: 'destructive',
 };
 
-export function FollowupTimeline() {
-  const sorted = [...FOLLOWUPS].sort((a, b) =>
+export function FollowupTimeline({ followups = FOLLOWUPS, companies = COMPANIES }: { followups?: Followup[]; companies?: Company[] }) {
+  const sorted = [...followups].sort((a, b) =>
     new Date(b.happenedAt).getTime() - new Date(a.happenedAt).getTime()
   );
   return (
@@ -41,7 +42,7 @@ export function FollowupTimeline() {
         <div className="relative pl-6 space-y-3">
           <div className="absolute left-2 top-1 bottom-1 w-px bg-border" />
           {sorted.map(f => {
-            const c = getCompany(f.companyId);
+            const c = companies.find(company => company.id === f.companyId);
             return (
               <div key={f.id} className="relative">
                 <div className="absolute -left-[18px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-card border-2 border-primary text-primary">

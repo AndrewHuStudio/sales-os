@@ -21,8 +21,10 @@ const MOOD_VARIANT: Record<string, 'success' | 'muted' | 'destructive'> = {
   正面: 'success', 中性: 'muted', 负面: 'destructive',
 };
 
-export function FollowupTimeline({ companyId }: { companyId: string }) {
-  const list = getFollowupsByCompany(companyId);
+export function FollowupTimeline({ companyId, followups }: { companyId: string; followups?: Followup[] }) {
+  const list = [...(followups ?? getFollowupsByCompany(companyId))].sort(
+    (a, b) => new Date(b.happenedAt).getTime() - new Date(a.happenedAt).getTime()
+  );
   if (list.length === 0) {
     return (
       <Card>

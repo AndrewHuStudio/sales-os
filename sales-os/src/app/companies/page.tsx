@@ -1,34 +1,46 @@
 // 客户列表页 - 表格 + 筛选 + 排序
 // 行数目标：≤150
 'use client';
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, ArrowUpDown, Building2, MapPin, Users } from 'lucide-react';
+import { Search, Building2, MapPin, Users } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { COMPANIES } from '@/lib/data/companies';
-import { DISTRICTS } from '@/lib/data/districts';
+import { FALLBACK_BOOTSTRAP, getBootstrap } from '@/lib/backend-api';
 import { cn } from '@/lib/utils';
+import type { Company, District } from '@/types';
 
 type SortKey = 'score' | 'name' | 'headcount';
 
 export default function CompaniesPage() {
+  const [companies, setCompanies] = useState<Company[]>(FALLBACK_BOOTSTRAP.companies);
+  const [districts, setDistricts] = useState<District[]>(FALLBACK_BOOTSTRAP.districts);
   const [search, setSearch] = useState('');
   const [tier, setTier] = useState<'all' | 'A' | 'B' | 'C'>('all');
   const [district, setDistrict] = useState('all');
   const [sort, setSort] = useState<SortKey>('score');
 
+  useEffect(() => {
+    let mounted = true;
+    void getBootstrap().then(data => {
+      if (!mounted) return;
+      setCompanies(data.companies);
+      setDistricts(data.districts);
+    });
+    return () => { mounted = false; };
+  }, []);
+
   const list = useMemo(() => {
-    let l = COMPANIES;
+    let l = companies;
     if (tier !== 'all') l = l.filter(c => c.tier === tier);
     if (district !== 'all') l = l.filter(c => c.districtId === district);
     if (search) {
       const s = search.toLowerCase();
-      l = l.filter(c => c.name.toLowerCase().includes(s) || c.industry.includes(search));
+      l = l.filter(c => c.name.toLowerCase().includes(s) || c.industry.toLowerCase().includes(s));
     }
     l = [...l].sort((a, b) =>
       sort === 'score' ? b.score - a.score :
@@ -36,20 +48,20 @@ export default function CompaniesPage() {
       b.headcount - a.headcount
     );
     return l;
-  }, [search, tier, district, sort]);
+  }, [companies, search, tier, district, sort]);
 
   const stats = {
-    total: COMPANIES.length,
-    A: COMPANIES.filter(c => c.tier === 'A').length,
-    B: COMPANIES.filter(c => c.tier === 'B').length,
-    C: COMPANIES.filter(c => c.tier === 'C').length,
+    total: companies.length,
+    A: companies.filter(c => c.tier === 'A').length,
+    B: companies.filter(c => c.tier === 'B').length,
+    C: companies.filter(c => c.tier === 'C').length,
   };
 
   return (
     <div className="space-y-4 p-4 md:p-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold">客户列表</h1>
-        <p className="text-sm text-muted-foreground">深圳 8 大商区 · 40 家目标企业 · AI 智能评分</p>
+        <p className="text-sm text-muted-foreground">深圳 {districts.length} 大商区 · {companies.length} 家目标企业 · AI 智能评分</p>
       </div>
 
       {/* 统计 */}
@@ -110,7 +122,7 @@ export default function CompaniesPage() {
             >
               全部商区
             </button>
-            {DISTRICTS.map(d => (
+            {districts.map(d => (
               <button
                 key={d.id}
                 onClick={() => setDistrict(d.id)}
@@ -127,7 +139,7 @@ export default function CompaniesPage() {
       <div className="text-xs text-muted-foreground">共 {list.length} 家</div>
       <div className="grid gap-3">
         {list.map(c => {
-          const d = DISTRICTS.find(x => x.id === c.districtId);
+          const d = districts.find(x => x.id === c.districtId);
           return (
             <Link key={c.id} href={`/company/${c.id}`}>
               <Card className="transition-all hover:shadow-soft hover:border-primary/30">

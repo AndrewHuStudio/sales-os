@@ -7,6 +7,7 @@ import { AIRecommendation } from '@/components/dashboard/AIRecommendation';
 import { TodayStats } from '@/components/dashboard/TodayStats';
 import { useRoute } from '@/hooks/useTencentMap';
 import { TODAY_ROUTE } from '@/lib/data/route';
+import { getTodayRoute } from '@/lib/backend-api';
 import type { TodayRoute } from '@/types';
 
 export default function DashboardPage() {
@@ -14,12 +15,20 @@ export default function DashboardPage() {
   const { data: realRoute, plan } = useRoute();
 
   useEffect(() => {
-    const sp = TODAY_ROUTE.startPoint;
-    const wps = TODAY_ROUTE.stops.map(s => ({ lat: s.company.lat, lng: s.company.lng }));
+    let mounted = true;
+    void getTodayRoute().then(next => {
+      if (mounted) setRoute(next);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const sp = route.startPoint;
+    const wps = route.stops.map(s => ({ lat: s.company.lat, lng: s.company.lng }));
     const last = wps[wps.length - 1];
     if (!last) return;
     void plan({ lat: sp.lat, lng: sp.lng }, last, wps.slice(0, -1), 'driving');
-  }, [plan]);
+  }, [plan, route]);
 
   const handleStart = (companyId: string) => {
     setRoute(prev => ({

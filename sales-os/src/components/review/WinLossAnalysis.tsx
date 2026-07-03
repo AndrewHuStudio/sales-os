@@ -5,7 +5,9 @@ import { ThumbsUp, ThumbsDown, Lightbulb } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { REVIEW_SUMMARY } from '@/lib/data/review';
 
-export function WinLossAnalysis() {
+type ReviewSummary = typeof REVIEW_SUMMARY;
+
+export function WinLossAnalysis({ summary = REVIEW_SUMMARY }: { summary?: ReviewSummary }) {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <Card>
@@ -16,7 +18,7 @@ export function WinLossAnalysis() {
         </CardHeader>
         <CardContent>
           <ol className="space-y-2 text-sm">
-            {REVIEW_SUMMARY.topWinReasons.map((r, i) => (
+            {summary.topWinReasons.map((r, i) => (
               <li key={i} className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/10 text-success text-xs font-bold">{i + 1}</span>
                 <span className="text-foreground/90 leading-relaxed">{r}</span>
@@ -33,7 +35,7 @@ export function WinLossAnalysis() {
         </CardHeader>
         <CardContent>
           <ol className="space-y-2 text-sm">
-            {REVIEW_SUMMARY.topLossReasons.map((r, i) => (
+            {summary.topLossReasons.map((r, i) => (
               <li key={i} className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive text-xs font-bold">{i + 1}</span>
                 <span className="text-foreground/90 leading-relaxed">{r}</span>
@@ -50,7 +52,7 @@ export function WinLossAnalysis() {
         </CardHeader>
         <CardContent>
           <ol className="space-y-2 text-sm">
-            {REVIEW_SUMMARY.nextWeekFocus.map((r, i) => (
+            {summary.nextWeekFocus.map((r, i) => (
               <li key={i} className="flex gap-2">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold">{i + 1}</span>
                 <span className="text-foreground/90 leading-relaxed">{r}</span>

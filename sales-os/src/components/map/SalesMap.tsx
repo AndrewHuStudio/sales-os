@@ -18,14 +18,12 @@ import {
 } from '@/components/ui/mapcn-marker-popup';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { COMPANIES } from '@/lib/data/companies';
-import { DISTRICTS } from '@/lib/data/districts';
-import { TODAY_ROUTE } from '@/lib/data/route';
+import { FALLBACK_BOOTSTRAP, getBootstrap } from '@/lib/backend-api';
 import { getCompanyVerification, locationLabel, verificationLabel, type VerificationStatus } from '@/lib/data/company-verification';
 import { SZ_CENTER } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { useRoute } from '@/hooks/useTencentMap';
-import type { Company, CompanyTier } from '@/types';
+import type { Company, CompanyTier, District, TodayRoute } from '@/types';
 import type { TMapPOI } from '@/types/maps';
 
 const TIER_STYLE: Record<CompanyTier, { dot: string; ring: string; text: string; label: string }> = {
@@ -57,11 +55,11 @@ function verificationVariant(status: VerificationStatus): 'success' | 'default' 
   return 'muted';
 }
 
-function routeToCoordinates(path?: { lat: number; lng: number }[]): [number, number][] {
+function routeToCoordinates(todayRoute: TodayRoute, path?: { lat: number; lng: number }[]): [number, number][] {
   if (path && path.length > 1) return path.map(p => [p.lng, p.lat]);
   return [
-    [TODAY_ROUTE.startPoint.lng, TODAY_ROUTE.startPoint.lat],
-    ...TODAY_ROUTE.stops.map(s => [s.company.lng, s.company.lat] as [number, number]),
+    [todayRoute.startPoint.lng, todayRoute.startPoint.lat],
+    ...todayRoute.stops.map(s => [s.company.lng, s.company.lat] as [number, number]),
   ];
 }
 
@@ -69,23 +67,38 @@ export function SalesMap() {
   const searchParams = useSearchParams();
   const companyFromQuery = searchParams.get('company');
   const mapRef = useRef<MapRef | null>(null);
+  const [companies, setCompanies] = useState<Company[]>(FALLBACK_BOOTSTRAP.companies);
+  const [districts, setDistricts] = useState<District[]>(FALLBACK_BOOTSTRAP.districts);
+  const [todayRoute, setTodayRoute] = useState<TodayRoute>(FALLBACK_BOOTSTRAP.todayRoute);
   const [filter, setFilter] = useState<'all' | CompanyTier>('all');
-  const [activeId, setActiveId] = useState<string | null>(TODAY_ROUTE.stops[0]?.company.id ?? null);
+  const [activeId, setActiveId] = useState<string | null>(FALLBACK_BOOTSTRAP.todayRoute.stops[0]?.company.id ?? null);
   const [popupCompanyId, setPopupCompanyId] = useState<string | null>(null);
   const [poi, setPoi] = useState<TMapPOI | null>(null);
   const { data: routeData, from: routeFrom, plan } = useRoute();
 
   useEffect(() => {
-    const sp = TODAY_ROUTE.startPoint;
-    const stops = TODAY_ROUTE.stops.map(s => ({ lat: s.company.lat, lng: s.company.lng }));
+    let mounted = true;
+    void getBootstrap().then(data => {
+      if (!mounted) return;
+      setCompanies(data.companies);
+      setDistricts(data.districts);
+      setTodayRoute(data.todayRoute);
+      setActiveId(current => current ?? data.todayRoute.stops[0]?.company.id ?? null);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    const sp = todayRoute.startPoint;
+    const stops = todayRoute.stops.map(s => ({ lat: s.company.lat, lng: s.company.lng }));
     const last = stops[stops.length - 1];
     if (!last) return;
     void plan({ lat: sp.lat, lng: sp.lng }, last, stops.slice(0, -1), 'driving');
-  }, [plan]);
+  }, [plan, todayRoute]);
 
   useEffect(() => {
     if (!companyFromQuery) return;
-    const company = COMPANIES.find(c => c.id === companyFromQuery);
+    const company = companies.find(c => c.id === companyFromQuery);
     if (!company) return;
     setFilter('all');
     setActiveId(company.id);
@@ -94,7 +107,7 @@ export function SalesMap() {
       mapRef.current?.flyTo({ center: [company.lng, company.lat], zoom: 13.5, duration: 1000 });
     }, 350);
     return () => window.clearTimeout(timer);
-  }, [companyFromQuery]);
+  }, [companies, companyFromQuery]);
 
   useEffect(() => {
     const onFlyToPoi = (e: Event) => {
@@ -116,13 +129,13 @@ export function SalesMap() {
   }, []);
 
   const visibleCompanies = useMemo(
-    () => COMPANIES.filter(c => filter === 'all' || c.tier === filter),
-    [filter],
+    () => companies.filter(c => filter === 'all' || c.tier === filter),
+    [companies, filter],
   );
-  const activeCompany = activeId ? COMPANIES.find(c => c.id === activeId) : null;
-  const popupCompany = popupCompanyId ? COMPANIES.find(c => c.id === popupCompanyId) : null;
-  const routeCoordinates = useMemo(() => routeToCoordinates(routeData?.path), [routeData]);
-  const todayIds = new Set(TODAY_ROUTE.stops.map(s => s.company.id));
+  const activeCompany = activeId ? companies.find(c => c.id === activeId) : null;
+  const popupCompany = popupCompanyId ? companies.find(c => c.id === popupCompanyId) : null;
+  const routeCoordinates = useMemo(() => routeToCoordinates(todayRoute, routeData?.path), [routeData, todayRoute]);
+  const todayIds = new Set(todayRoute.stops.map(s => s.company.id));
   const focusCompany = (company: Company) => {
     setActiveId(company.id);
     setPopupCompanyId(company.id);
@@ -147,7 +160,7 @@ export function SalesMap() {
           opacity={0.86}
           dashArray={routeFrom === 'mock' ? [2, 1.5] : undefined}
         />
-        <DistrictMarkers />
+        <DistrictMarkers districts={districts} />
         {visibleCompanies.map(c => (
           <CompanyMarker
             key={c.id}
@@ -157,7 +170,7 @@ export function SalesMap() {
             onActivate={() => focusCompany(c)}
           />
         ))}
-        <StartMarker />
+        <StartMarker startPoint={todayRoute.startPoint} />
         {poi && <PoiMarker poi={poi} />}
         {popupCompany && (
           <MapPopup
@@ -197,7 +210,7 @@ function MapToolbar({
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold">深圳销售地图</div>
-          <div className="mt-0.5 text-xs text-muted-foreground">40 家客户 · 8 大商区 · 富信息弹窗</div>
+          <div className="mt-0.5 text-xs text-muted-foreground">客户地图 · 商区路线 · 富信息弹窗</div>
         </div>
         <Badge variant={routeFrom === 'tencent-map' ? 'success' : 'muted'} className="shrink-0 text-[10px]">
           {routeFrom === 'tencent-map' ? '腾讯路线' : 'Mock 路线'}
@@ -302,10 +315,10 @@ function CompanyPopup({ company }: { company: Company }) {
   );
 }
 
-function DistrictMarkers() {
+function DistrictMarkers({ districts }: { districts: District[] }) {
   return (
     <>
-      {DISTRICTS.map(d => (
+      {districts.map(d => (
         <MapMarker key={d.id} longitude={d.center[0]} latitude={d.center[1]}>
           <MarkerContent>
             <div className="flex size-10 items-center justify-center rounded-full border border-blue-200 bg-blue-500/15 text-[11px] font-semibold text-blue-700 backdrop-blur">
@@ -329,8 +342,8 @@ function DistrictMarkers() {
   );
 }
 
-function StartMarker() {
-  const sp = TODAY_ROUTE.startPoint;
+function StartMarker({ startPoint }: { startPoint: TodayRoute['startPoint'] }) {
+  const sp = startPoint;
   return (
     <MapMarker longitude={sp.lng} latitude={sp.lat}>
       <MarkerContent>

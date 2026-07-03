@@ -4,16 +4,17 @@ import { FunnelChart } from '@/components/funnel/FunnelChart';
 import { FunnelKPI } from '@/components/funnel/FunnelKPI';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FUNNEL_STATS, FUNNEL_TOTAL } from '@/lib/data/funnel';
+import { getFunnel } from '@/lib/backend-api';
 
-export default function FunnelPage() {
+export default async function FunnelPage() {
+  const funnel = await getFunnel();
   return (
     <div className="space-y-4 p-4 md:p-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-bold">销售漏斗</h1>
         <p className="text-sm text-muted-foreground">线索 → 签约全流程分析 · 阶段转化与金额分布</p>
       </div>
-      <FunnelKPI />
+      <FunnelKPI total={funnel.total} />
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
@@ -22,7 +23,7 @@ export default function FunnelPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <FunnelChart stats={FUNNEL_STATS} total={FUNNEL_TOTAL.totalLeads} />
+          <FunnelChart stats={funnel.stats} total={funnel.total.totalLeads} />
         </CardContent>
       </Card>
     </div>
