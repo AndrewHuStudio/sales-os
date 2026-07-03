@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>跟进记录 · WorkBuddy GeoSales OS</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230052D9'/><stop offset='1' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='66' text-anchor='middle' fill='white' font-size='42' font-weight='800' font-family='-apple-system'>W</text></svg>" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">跟进记录</h1>
+          <p class="page-subtitle">所有客户沟通历史 · 自然语言输入 · AI 自动结构化</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn-icon-theme mobile-menu-btn" id="mobile-menu-btn" title="菜单">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <button class="btn-icon-theme" id="theme-btn" title="切换主题">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+          </button>
+          <a href="companies.html" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            选择企业跟进
+          </a>
+        </div>
+      </div>
+
+      <!-- 统计 -->
+      <div class="grid grid-4 mb-6">
+        <div class="stat">
+          <div class="stat-label">总跟进数</div>
+          <div class="stat-value num" id="stat-total">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">本周跟进</div>
+          <div class="stat-value num text-primary" id="stat-week">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">提及异议</div>
+          <div class="stat-value num text-warning" id="stat-objections">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">覆盖企业</div>
+          <div class="stat-value num text-success" id="stat-companies">0</div>
+        </div>
+      </div>
+
+      <!-- 筛选 -->
+      <div class="filter-bar">
+        <input class="form-control search" id="filter-search" placeholder="🔍 搜索跟进内容、企业名称..." />
+        <select class="form-control" id="filter-stage">
+          <option value="">全部阶段</option>
+        </select>
+        <select class="form-control" id="filter-channel">
+          <option value="">全部渠道</option>
+          <option value="微信">微信</option>
+          <option value="电话">电话</option>
+          <option value="会议">会议</option>
+          <option value="邮件">邮件</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="reset-btn">重置</button>
+      </div>
+
+      <!-- 时间线 -->
+      <div class="card">
+        <h3 class="section-title"><span class="section-title-bar"></span>跟进时间线</h3>
+        <div id="timeline" class="flex-col gap-3"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    WB.initShell('followups');
+
+    WB.STAGES.forEach(s => {
+      const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name;
+      document.getElementById('filter-stage').appendChild(opt);
+    });
+
+    let filters = { search: '', stage: '', channel: '' };
+
+    function applyFilters() {
+      const all = WB.loadFollowups();
+      return all.filter(f => {
+        if (filters.stage && f.stage !== filters.stage) return false;
+        if (filters.channel && f.channel !== filters.channel) return false;
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          const c = WB.getCompany(f.companyId);
+          if (!f.summary.toLowerCase().includes(q) && !(c && c.name.toLowerCase().includes(q))) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      const list = applyFilters();
+      // 统计
+      const all = WB.loadFollowups();
+      const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+      const weekCount = all.filter(f => new Date(f.followupTime) >= weekAgo).length;
+      const objectionCount = all.filter(f => f.objections && f.objections.length > 0).length;
+      const companiesCount = new Set(all.map(f => f.companyId)).size;
+      document.getElementById('stat-total').textContent = all.length;
+      document.getElementById('stat-week').textContent = weekCount;
+      document.getElementById('stat-objections').textContent = objectionCount;
+      document.getElementById('stat-companies').textContent = companiesCount;
+
+      const tl = document.getElementById('timeline');
+      if (list.length === 0) {
+        tl.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>暂无跟进记录</div><div class="text-xs text-muted mt-2">去企业详情页添加跟进</div></div>';
+        return;
+      }
+      tl.innerHTML = list.map(f => {
+        const c = WB.getCompany(f.companyId);
+        if (!c) return '';
+        const stage = WB.getStage(f.stage);
+        return `
+          <a href="company.html?id=${c.id}" class="card card-hover" style="text-decoration: none; color: inherit; display: block; padding: 18px 20px;">
+            <div class="flex items-center gap-3 mb-3">
+              <div style="width: 40px; height: 40px; border-radius: 10px; background: var(--gradient-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0;">${c.name.charAt(0)}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div class="font-bold truncate">${WB.escapeHtml(c.name)}</div>
+                <div class="text-xs text-muted">${WB.fmtDate(f.followupTime, true)} · ${f.channel} · ${WB.escapeHtml(f.contactRole)}${f.contactName ? ' · ' + WB.escapeHtml(f.contactName) : ''}</div>
+              </div>
+              <span class="badge badge-${stage.color}">${stage.name}</span>
+            </div>
+            <div class="text-sm" style="line-height: 1.7; color: var(--color-text);">${WB.escapeHtml(f.summary)}</div>
+            ${f.customerInterest && f.customerInterest.length > 0 ? `
+              <div class="mt-2 text-xs">✓ 关注：${f.customerInterest.map(i => `<span class="badge badge-primary" style="font-size: 10px;">${i}</span>`).join(' ')}</div>
+            ` : ''}
+            ${f.objections && f.objections.length > 0 ? `
+              <div class="mt-2 text-xs">⚠ 异议：${f.objections.map(o => `<span class="badge badge-warning" style="font-size: 10px;">${o}</span>`).join(' ')}</div>
+            ` : ''}
+            <div class="flex items-center justify-between mt-3 pt-3" style="border-top: 1px solid var(--color-border);">
+              <div class="text-xs text-soft"><strong>下一步：</strong>${WB.escapeHtml(f.nextAction || '—')}</div>
+              <div class="text-xs text-muted">${WB.relativeDate(f.nextFollowupDate)}</div>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('filter-search').addEventListener('input', e => { filters.search = e.target.value; render(); });
+    document.getElementById('filter-stage').addEventListener('change', e => { filters.stage = e.target.value; render(); });
+    document.getElementById('filter-channel').addEventListener('change', e => { filters.channel = e.target.value; render(); });
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      filters = { search: '', stage: '', channel: '' };
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-stage').value = '';
+      document.getElementById('filter-channel').value = '';
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

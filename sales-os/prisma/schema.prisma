@@ -1,0 +1,114 @@
+// Prisma schema (6 张表)
+// 实际项目使用 mock 数据（lib/data/），Prisma 仅作为后续切换到真实数据库的占位
+// 行数目标：≤120
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model District {
+  id                String   @id
+  name              String
+  shortName         String
+  description       String
+  lng               Float
+  lat               Float
+  zoom              Int
+  companyCount      Int
+  hotScore          Int
+  characteristics   String   // JSON array
+  targetIndustries  String   // JSON array
+  businessTips      String
+  companies         Company[]
+}
+
+model Company {
+  id              String     @id
+  name            String
+  shortName       String
+  industry        String
+  tier            String     // A / B / C
+  status          String
+  score           Int
+  scoreBreakdown  String     // JSON
+  districtId      String
+  address         String
+  lng             Float
+  lat             Float
+  headcount       Int
+  revenue         String?
+  fundingRound    String?
+  homepage        String?
+  painPoints      String     // JSON array
+  wbFit           String
+  lastContactAt   DateTime?
+  nextActionAt    DateTime?
+  ownerName       String
+  source          String
+  tags            String     // JSON array
+  district        District   @relation(fields: [districtId], references: [id])
+  contacts        Contact[]
+  opportunities   Opportunity[]
+  followups       Followup[]
+  salesScript     SalesScript?
+}
+
+model Contact {
+  id        String   @id
+  companyId String
+  name      String
+  title     String
+  role      String
+  phone     String?
+  wechat    String?
+  email     String?
+  influence Int
+  attitude  String
+  notes     String?
+  company   Company  @relation(fields: [companyId], references: [id])
+}
+
+model Opportunity {
+  id              String   @id
+  companyId       String
+  title           String
+  stage           String
+  amount          Float
+  probability     Int
+  expectedCloseAt DateTime
+  products        String   // JSON array
+  notes           String?
+  company         Company  @relation(fields: [companyId], references: [id])
+}
+
+model Followup {
+  id            String   @id
+  companyId     String
+  contactId     String?
+  type          String
+  direction     String
+  happenedAt    DateTime
+  summary       String
+  nextStep      String?
+  nextAt        DateTime?
+  ownerName     String
+  mood          String
+  attachments   String?  // JSON
+  company       Company  @relation(fields: [companyId], references: [id])
+}
+
+model SalesScript {
+  id          String  @id @default(cuid())
+  companyId   String  @unique
+  opener      String
+  painHook    String
+  valueProp   String
+  objection   String  // JSON
+  closeAsk    String
+  company     Company @relation(fields: [companyId], references: [id])
+}

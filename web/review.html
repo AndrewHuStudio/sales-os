@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>销售复盘 · WorkBuddy GeoSales OS</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230052D9'/><stop offset='1' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='66' text-anchor='middle' fill='white' font-size='42' font-weight='800' font-family='-apple-system'>W</text></svg>" />
+  <style>
+    .review-block { padding: 20px 24px; border-radius: var(--radius-lg); background: var(--color-bg-elevated); border: 1px solid var(--color-border); margin-bottom: 16px; }
+    .review-block-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .review-block-title-bar { width: 3px; height: 14px; border-radius: 2px; background: var(--gradient-primary); }
+    .ranking-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--color-border); }
+    .ranking-row:last-child { border-bottom: none; }
+    .ranking-num { width: 28px; height: 28px; border-radius: 50%; background: var(--color-bg-soft); color: var(--color-text-soft); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; flex-shrink: 0; }
+    .ranking-num.top1 { background: linear-gradient(135deg, #FCD34D, #F59E0B); color: white; }
+    .ranking-num.top2 { background: linear-gradient(135deg, #D1D5DB, #9CA3AF); color: white; }
+    .ranking-num.top3 { background: linear-gradient(135deg, #FED7AA, #FB923C); color: white; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">销售复盘</h1>
+          <p class="page-subtitle">本周销售动作全览 · 高转化行业 / 商区 / 话术 · 下周行动清单</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn-icon-theme mobile-menu-btn" id="mobile-menu-btn" title="菜单">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <button class="btn-icon-theme" id="theme-btn" title="切换主题">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+          </button>
+          <button class="btn btn-primary" id="export-review-btn">导出周报</button>
+        </div>
+      </div>
+
+      <!-- 周报时间选择 -->
+      <div class="filter-bar">
+        <div class="text-sm text-soft">📅 复盘周期：</div>
+        <select class="form-control" id="period-select">
+          <option value="7">近 7 天</option>
+          <option value="14">近 14 天</option>
+          <option value="30" selected>近 30 天</option>
+        </select>
+        <div class="text-sm text-soft" style="margin-left: auto;">更新于 <span id="update-time"></span></div>
+      </div>
+
+      <!-- 关键指标 -->
+      <div class="grid grid-5 mb-6">
+        <div class="stat">
+          <div class="stat-label">触达客户</div>
+          <div class="stat-value num text-primary" data-count="23">23</div>
+          <div class="stat-delta">+18%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">有效回复</div>
+          <div class="stat-value num" data-count="15">15</div>
+          <div class="stat-delta">回复率 65%</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">已约会议</div>
+          <div class="stat-value num" data-count="8">8</div>
+          <div class="stat-delta">+3 场</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">POC 客户</div>
+          <div class="stat-value num text-warning" data-count="4">4</div>
+          <div class="stat-delta">+1 个</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">本周成交</div>
+          <div class="stat-value num text-success" data-count="1">1</div>
+          <div class="stat-delta">首单 🎉</div>
+        </div>
+      </div>
+
+      <!-- 主体 -->
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <!-- 高转化商区 -->
+          <div class="review-block">
+            <div class="review-block-title"><span class="review-block-title-bar"></span>高转化商区 Top 3</div>
+            <div id="top-districts"></div>
+          </div>
+          <!-- 高转化行业 -->
+          <div class="review-block">
+            <div class="review-block-title"><span class="review-block-title-bar"></span>高转化行业 Top 5</div>
+            <div id="top-industries"></div>
+          </div>
+        </div>
+
+        <div>
+          <!-- 常见客户异议 -->
+          <div class="review-block">
+            <div class="review-block-title"><span class="review-block-title-bar"></span>常见客户异议 Top 5</div>
+            <div id="top-objections"></div>
+          </div>
+          <!-- 高转化话术 -->
+          <div class="review-block">
+            <div class="review-block-title"><span class="review-block-title-bar"></span>高转化话术 Top 3</div>
+            <div id="top-scripts"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 复盘 + 下周行动清单 -->
+      <div class="card mt-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="section-title" style="margin: 0;"><span class="section-title-bar"></span>AI 复盘 + 下周行动清单</h3>
+          <span class="badge badge-accent">✦ AI 生成</span>
+        </div>
+        <div class="ai-tip">
+          <strong>本周关键进展：</strong><br />
+          1. <strong>c11 深海跨境</strong> POC 第一期效果超预期，准备扩大范围到 50 人<br />
+          2. <strong>c6 汇金通</strong> 进入商务报价阶段，预计 Q3 完成合同签订<br />
+          3. <strong>c21 鼎力精密</strong> POC 招标材料准备中，7 月内完成<br />
+          4. <strong>c1 瀚云智联</strong> 推动商务报价中，POC 效果报告已发送<br />
+          5. <strong>c36 招商蛇口文旅</strong> 集团 AI 战略已立项，准备 7 月启动 POC<br /><br />
+
+          <strong>主要问题：</strong><br />
+          1. "价格/预算"异议占 32%，是最大阻力，建议准备统一 ROI 测算模板<br />
+          2. "数据安全"异议占 25%，是金融/制造业关键决策点，建议每个行业准备 1 份安全白皮书<br />
+          3. "集团/审批"异议占 18%，POC 推进速度受阻，建议增加集团对接人手<br /><br />
+
+          <strong>高转化行业：</strong> 跨境电商（转化率 38%）、金融科技（35%）、SaaS（32%）。原因：1）业务场景明确；2）AI 接受度高；3）有 IT 决策权。<br /><br />
+
+          <strong>下周重点客户（按优先级）：</strong><br />
+          1. <strong>c11 深海跨境</strong>：推动 POC 范围扩大，商务对接<br />
+          2. <strong>c6 汇金通</strong>：补充反洗钱场景说明材料，7/3 前完成<br />
+          3. <strong>c7 湾海财富</strong>：约 IT 沟通 POC 扩展方案<br />
+          4. <strong>c21 鼎力精密</strong>：提交 POC 招标书，启动招标流程<br />
+          5. <strong>c16 平安资管</strong>：提供 ROI 报告 + 实施路径，推动集团立项<br />
+          6. <strong>c36 招商蛇口文旅</strong>：准备 POC 方案 + 集团采购对接<br />
+          7. <strong>c2 智谱灵犀</strong>：约产品演示，争取 7/4 前完成<br />
+          8. <strong>c4 鹰眼智能硬件</strong>：约 IT 负责人沟通，跨部门推动<br /><br />
+
+          <strong>行动清单：</strong><br />
+          □ 准备统一 ROI 测算模板（针对价格异议）<br />
+          □ 准备 3 份行业数据安全白皮书（金融、制造、跨境）<br />
+          □ 批量触达 18 家未触达 A 类客户<br />
+          □ 约 5 家 B 类培育客户升级到首次沟通<br />
+          □ 复盘"输单"客户，提炼失败原因
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    WB.initShell('review');
+
+    document.getElementById('update-time').textContent = WB.fmtDate(new Date(), true);
+
+    // 高转化商区
+    const topDistricts = [...WB.districts()].sort((a, b) => b.highScoreCount - a.highScoreCount).slice(0, 3);
+    document.getElementById('top-districts').innerHTML = topDistricts.map((d, i) => `
+      <div class="ranking-row">
+        <div class="ranking-num ${i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : ''}">${i + 1}</div>
+        <div style="flex: 1;">
+          <div class="font-semibold">${WB.escapeHtml(d.name)}</div>
+          <div class="text-xs text-muted">A 类 ${d.highScoreCount} · 已触达 ${d.touchedCount}</div>
+        </div>
+        <div class="text-right">
+          <div class="font-bold num text-primary">${d.highScoreCount}</div>
+          <div class="text-xs text-muted">高潜</div>
+        </div>
+      </div>
+    `).join('');
+
+    // 高转化行业
+    const industryMap = {};
+    WB.companies().forEach(c => {
+      if (!industryMap[c.industry]) industryMap[c.industry] = { total: 0, aLevel: 0, advanced: 0 };
+      industryMap[c.industry].total++;
+      if (c.customerLevel === 'A') industryMap[c.industry].aLevel++;
+      if (['poc', 'pricing', 'contract', 'won'].includes(c.currentStage)) industryMap[c.industry].advanced++;
+    });
+    const topIndustries = Object.entries(industryMap)
+      .map(([name, v]) => ({ name, ...v, rate: v.total > 0 ? (v.advanced / v.total * 100) : 0 }))
+      .sort((a, b) => b.rate - a.rate).slice(0, 5);
+    document.getElementById('top-industries').innerHTML = topIndustries.map((d, i) => `
+      <div class="ranking-row">
+        <div class="ranking-num ${i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : ''}">${i + 1}</div>
+        <div style="flex: 1;">
+          <div class="font-semibold">${WB.escapeHtml(d.name)}</div>
+          <div class="text-xs text-muted">${d.total} 家 · A 类 ${d.aLevel}</div>
+        </div>
+        <div class="text-right">
+          <div class="font-bold num text-success">${d.rate.toFixed(1)}%</div>
+          <div class="text-xs text-muted">推进率</div>
+        </div>
+      </div>
+    `).join('');
+
+    // 常见异议
+    const objectionsMap = {};
+    WB.loadFollowups().forEach(f => {
+      (f.objections || []).forEach(o => {
+        objectionsMap[o] = (objectionsMap[o] || 0) + 1;
+      });
+    });
+    const topObjections = Object.entries(objectionsMap)
+      .sort((a, b) => b[1] - a[1]).slice(0, 5);
+    if (topObjections.length === 0) {
+      document.getElementById('top-objections').innerHTML = '<div class="text-sm text-soft">暂无论异数据</div>';
+    } else {
+      document.getElementById('top-objections').innerHTML = topObjections.map(([name, count], i) => `
+        <div class="ranking-row">
+          <div class="ranking-num ${i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : ''}">${i + 1}</div>
+          <div style="flex: 1;" class="font-semibold">${WB.escapeHtml(name)}</div>
+          <div class="text-right">
+            <div class="font-bold num text-warning">${count}</div>
+            <div class="text-xs text-muted">次</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 高转化话术
+    const topScripts = [...WB.scripts()].sort((a, b) => b.effectivenessScore - a.effectivenessScore).slice(0, 3);
+    document.getElementById('top-scripts').innerHTML = topScripts.map((s, i) => `
+      <div class="ranking-row" style="display: block; padding: 12px 0;">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="ranking-num ${i === 0 ? 'top1' : i === 1 ? 'top2' : 'top3'}">${i + 1}</div>
+          <div class="font-semibold text-sm">${WB.escapeHtml(s.industry)} · ${WB.escapeHtml(s.kpRole)} · ${WB.escapeHtml(s.scenario)}</div>
+          <div class="ml-auto text-xs font-bold num text-success">${s.effectivenessScore} 分</div>
+        </div>
+        <div class="text-xs text-soft" style="line-height: 1.5; padding-left: 40px;">${WB.escapeHtml(s.content.substring(0, 100))}...</div>
+      </div>
+    `).join('');
+
+    document.getElementById('export-review-btn').addEventListener('click', () => {
+      const text = `WorkBuddy 销售周报\n生成时间：${WB.fmtDate(new Date(), true)}\n\n` +
+        `📊 关键指标：触达 23 / 回复 15 / 会议 8 / POC 4 / 成交 1\n\n` +
+        `📍 高转化商区：\n${topDistricts.map((d, i) => `${i+1}. ${d.name}（A 类 ${d.highScoreCount}）`).join('\n')}\n\n` +
+        `🏭 高转化行业：\n${topIndustries.map((d, i) => `${i+1}. ${d.name}（推进率 ${d.rate.toFixed(1)}%）`).join('\n')}\n\n` +
+        `⚠️ 常见异议：\n${topObjections.map(([n, c], i) => `${i+1}. ${n}（${c} 次）`).join('\n')}\n\n` +
+        `💬 高转化话术：\n${topScripts.map((s, i) => `${i+1}. ${s.industry}·${s.kpRole}·${s.scenario}（${s.effectivenessScore} 分）`).join('\n')}`;
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `WorkBuddy-销售周报-${WB.todayStr()}.txt`;
+      a.click();
+      WB.toast('周报已导出');
+    });
+  </script>
+</body>
+</html>

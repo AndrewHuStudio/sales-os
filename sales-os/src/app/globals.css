@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 100% 43%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 156 100% 33%;
+    --success-foreground: 210 40% 98%;
+    --warning: 24 95% 53%;
+    --warning-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 217 100% 43%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 199 100% 50%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 156 80% 50%;
+    --success-foreground: 222 47% 11%;
+    --warning: 24 95% 60%;
+    --warning-foreground: 222 47% 11%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 199 100% 50%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+}
+
+@layer utilities {
+  .glass {
+    background: hsl(var(--card) / 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--border) / 0.5);
+  }
+
+  .text-gradient-hero {
+    background: linear-gradient(135deg, #0052D9 0%, #00A6FF 50%, #00C7BE 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .mesh-bg {
+    background-image: radial-gradient(at 20% 20%, rgba(0, 166, 255, 0.12) 0px, transparent 50%),
+                      radial-gradient(at 80% 0%, rgba(0, 199, 190, 0.08) 0px, transparent 50%),
+                      radial-gradient(at 0% 80%, rgba(0, 82, 217, 0.10) 0px, transparent 50%);
+  }
+
+  .dark .mesh-bg {
+    background-image: radial-gradient(at 20% 20%, rgba(0, 166, 255, 0.20) 0px, transparent 50%),
+                      radial-gradient(at 80% 0%, rgba(0, 199, 190, 0.15) 0px, transparent 50%),
+                      radial-gradient(at 0% 80%, rgba(0, 82, 217, 0.18) 0px, transparent 50%);
+  }
+}
+
+.maplibregl-popup-content {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  background: hsl(var(--card)) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  overflow: hidden;
+}
+
+.maplibregl-popup-tip {
+  border-top-color: hsl(var(--card)) !important;
+  border-bottom-color: hsl(var(--card)) !important;
+}
+
+.maplibregl-ctrl-attrib {
+  background: hsl(var(--card) / 0.8) !important;
+  font-size: 10px !important;
+}

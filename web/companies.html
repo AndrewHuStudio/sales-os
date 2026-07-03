@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>企业清单 · WorkBuddy GeoSales OS</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230052D9'/><stop offset='1' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='66' text-anchor='middle' fill='white' font-size='42' font-weight='800' font-family='-apple-system'>W</text></svg>" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">企业清单</h1>
+          <p class="page-subtitle"><span id="result-count">40</span> 家目标企业 · 按 WorkBuddy 适配评分排序</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn-icon-theme mobile-menu-btn" id="mobile-menu-btn" title="菜单">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <button class="btn-icon-theme" id="theme-btn" title="切换主题">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+          </button>
+          <button class="btn btn-ghost" id="export-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+            导出 CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- 筛选条 -->
+      <div class="filter-bar">
+        <input class="form-control search" id="filter-search" placeholder="🔍 搜索企业名称或行业..." />
+        <select class="form-control" id="filter-district">
+          <option value="">全部商区</option>
+        </select>
+        <select class="form-control" id="filter-industry">
+          <option value="">全部行业</option>
+        </select>
+        <select class="form-control" id="filter-level">
+          <option value="">全部等级</option>
+          <option value="A">A 类（80+）</option>
+          <option value="B">B 类（60-79）</option>
+          <option value="C">C 类（&lt;60）</option>
+        </select>
+        <select class="form-control" id="filter-stage">
+          <option value="">全部阶段</option>
+        </select>
+        <select class="form-control" id="filter-sort">
+          <option value="score-desc">评分：高→低</option>
+          <option value="score-asc">评分：低→高</option>
+          <option value="followup-asc">跟进时间：近→远</option>
+          <option value="name-asc">名称：A→Z</option>
+        </select>
+        <label class="flex items-center gap-2 text-sm cursor-pointer" style="padding: 0 8px;">
+          <input type="checkbox" id="filter-fav" />
+          <span>仅收藏</span>
+        </label>
+      </div>
+
+      <!-- 视图切换 -->
+      <div class="tabs">
+        <div class="tab active" data-view="table">📋 表格视图</div>
+        <div class="tab" data-view="card">🃏 卡片视图</div>
+      </div>
+
+      <!-- 表格视图 -->
+      <div id="table-view" class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 32px;">★</th>
+              <th>企业名称</th>
+              <th>商区</th>
+              <th>行业</th>
+              <th>规模</th>
+              <th>评分</th>
+              <th>等级</th>
+              <th>阶段</th>
+              <th>下一步</th>
+            </tr>
+          </thead>
+          <tbody id="companies-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- 卡片视图 -->
+      <div id="card-view" class="grid grid-3 hidden"></div>
+    </main>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    WB.initShell('companies');
+
+    // ---------- 筛选选项填充 ----------
+    WB.districts().forEach(d => {
+      const opt = document.createElement('option'); opt.value = d.id; opt.textContent = d.name;
+      document.getElementById('filter-district').appendChild(opt);
+    });
+    [...new Set(WB.companies().map(c => c.industry))].sort().forEach(i => {
+      const opt = document.createElement('option'); opt.value = i; opt.textContent = i;
+      document.getElementById('filter-industry').appendChild(opt);
+    });
+    WB.STAGES.forEach(s => {
+      const opt = document.createElement('option'); opt.value = s.id; opt.textContent = s.name;
+      document.getElementById('filter-stage').appendChild(opt);
+    });
+
+    // URL 参数
+    const params = new URLSearchParams(location.search);
+    let filters = {
+      search: params.get('q') || '',
+      district: params.get('district') || '',
+      industry: params.get('industry') || '',
+      level: params.get('level') || '',
+      stage: params.get('stage') || '',
+      favOnly: false,
+      sort: 'score-desc'
+    };
+    if (filters.search) document.getElementById('filter-search').value = filters.search;
+    if (filters.district) document.getElementById('filter-district').value = filters.district;
+    if (filters.industry) document.getElementById('filter-industry').value = filters.industry;
+    if (filters.level) document.getElementById('filter-level').value = filters.level;
+
+    // ---------- 渲染 ----------
+    function applyFilters() {
+      const list = WB.companies().filter(c => {
+        if (filters.search) {
+          const q = filters.search.toLowerCase();
+          if (!c.name.toLowerCase().includes(q) && !c.industry.includes(filters.search) && !c.subIndustry.includes(filters.search)) return false;
+        }
+        if (filters.district && c.districtId !== filters.district) return false;
+        if (filters.industry && c.industry !== filters.industry) return false;
+        if (filters.level && c.customerLevel !== filters.level) return false;
+        if (filters.stage && c.currentStage !== filters.stage) return false;
+        if (filters.favOnly && !WB.isFav(c.id)) return false;
+        return true;
+      });
+      switch (filters.sort) {
+        case 'score-desc': list.sort((a, b) => b.workbuddyScore - a.workbuddyScore); break;
+        case 'score-asc': list.sort((a, b) => a.workbuddyScore - b.workbuddyScore); break;
+        case 'followup-asc': list.sort((a, b) => (a.nextFollowupDate || '9999') .localeCompare(b.nextFollowupDate || '9999')); break;
+        case 'name-asc': list.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN')); break;
+      }
+      return list;
+    }
+
+    function render() {
+      const list = applyFilters();
+      document.getElementById('result-count').textContent = list.length;
+      const favs = WB.loadFavs();
+
+      // 表格
+      const tbody = document.getElementById('companies-tbody');
+      tbody.innerHTML = list.map(c => {
+        const level = WB.getLevel(c.workbuddyScore);
+        const stage = WB.getStage(c.currentStage);
+        const isFav = favs.includes(c.id);
+        return `
+          <tr onclick="location.href='company.html?id=${c.id}'">
+            <td onclick="event.stopPropagation()">
+              <span class="fav-btn" data-id="${c.id}" style="cursor: pointer; color: ${isFav ? '#F59E0B' : 'var(--color-text-muted)'}; font-size: 18px;">${isFav ? '★' : '☆'}</span>
+            </td>
+            <td>
+              <div class="font-semibold">${WB.escapeHtml(c.name)}</div>
+              <div class="text-xs text-muted">${WB.escapeHtml(c.subIndustry)}</div>
+            </td>
+            <td>${WB.escapeHtml(WB.getDistrictName(c.districtId))}</td>
+            <td>${WB.escapeHtml(c.industry)}</td>
+            <td class="text-xs text-soft">${WB.escapeHtml(c.companySize)}</td>
+            <td><span class="font-bold num text-primary">${c.workbuddyScore}</span></td>
+            <td><span class="badge level-${level.id}">${level.name}</span></td>
+            <td><span class="badge badge-${stage.color}">${stage.name}</span></td>
+            <td class="text-xs text-soft" style="max-width: 200px;">${WB.escapeHtml(c.nextAction || '—')}</td>
+          </tr>
+        `;
+      }).join('');
+
+      // 卡片视图
+      const cardView = document.getElementById('card-view');
+      cardView.innerHTML = list.map(c => {
+        const level = WB.getLevel(c.workbuddyScore);
+        const stage = WB.getStage(c.currentStage);
+        return `
+          <a href="company.html?id=${c.id}" class="card card-hover" style="text-decoration: none; color: inherit; display: block;">
+            <div class="flex items-center justify-between mb-3">
+              <span class="score-${level.id} num">${c.workbuddyScore}</span>
+              <span class="badge level-${level.id}">${level.name}</span>
+            </div>
+            <div class="font-bold mb-1" style="line-height: 1.4;">${WB.escapeHtml(c.name)}</div>
+            <div class="text-xs text-muted mb-3">${WB.escapeHtml(c.industry)} · ${WB.getDistrictName(c.districtId)}</div>
+            <div class="text-sm text-soft line-clamp-2 mb-3">${WB.escapeHtml(c.description)}</div>
+            <div class="flex items-center gap-2 text-xs">
+              <span class="badge badge-${stage.color}">${stage.name}</span>
+              <span class="text-muted">${WB.relativeDate(c.nextFollowupDate)}</span>
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      // 收藏按钮事件
+      document.querySelectorAll('.fav-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          WB.toggleFav(btn.dataset.id);
+          render();
+        });
+      });
+    }
+
+    // ---------- 事件 ----------
+    document.getElementById('filter-search').addEventListener('input', e => { filters.search = e.target.value; render(); });
+    document.getElementById('filter-district').addEventListener('change', e => { filters.district = e.target.value; render(); });
+    document.getElementById('filter-industry').addEventListener('change', e => { filters.industry = e.target.value; render(); });
+    document.getElementById('filter-level').addEventListener('change', e => { filters.level = e.target.value; render(); });
+    document.getElementById('filter-stage').addEventListener('change', e => { filters.stage = e.target.value; render(); });
+    document.getElementById('filter-sort').addEventListener('change', e => { filters.sort = e.target.value; render(); });
+    document.getElementById('filter-fav').addEventListener('change', e => { filters.favOnly = e.target.checked; render(); });
+
+    // 视图切换
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const view = tab.dataset.view;
+        if (view === 'table') {
+          document.getElementById('table-view').classList.remove('hidden');
+          document.getElementById('card-view').classList.add('hidden');
+        } else {
+          document.getElementById('table-view').classList.add('hidden');
+          document.getElementById('card-view').classList.remove('hidden');
+        }
+      });
+    });
+
+    // 导出 CSV
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const list = applyFilters();
+      const headers = ['企业名称', '商区', '行业', '细分行业', '规模', '评分', '等级', '阶段', '下一步', '下次跟进'];
+      const rows = list.map(c => [c.name, WB.getDistrictName(c.districtId), c.industry, c.subIndustry, c.companySize, c.workbuddyScore, c.customerLevel, WB.getStageName(c.currentStage), c.nextAction, c.nextFollowupDate || '']);
+      const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `WorkBuddy-企业清单-${WB.todayStr()}.csv`;
+      a.click();
+      WB.toast('已导出 ' + list.length + ' 家企业');
+    });
+
+    render();
+  </script>
+</body>
+</html>

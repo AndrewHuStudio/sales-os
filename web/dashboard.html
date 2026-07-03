@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>销售工作台 · WorkBuddy GeoSales OS</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230052D9'/><stop offset='1' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='66' text-anchor='middle' fill='white' font-size='42' font-weight='800' font-family='-apple-system'>W</text></svg>" />
+  <style>
+    /* ====== Dashboard v2 - Static Card / Sailing Board / Company Info ====== */
+    .visit-cards-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-bottom: 20px; }
+    .visit-card {
+      position: relative; cursor: pointer;
+      padding: 18px 18px 16px;
+      border: 1.5px solid var(--color-border);
+      background: var(--color-surface-strong);
+      backdrop-filter: blur(20px);
+      border-radius: 18px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+    .visit-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+      background: var(--gradient-primary);
+    }
+    .visit-card:hover { transform: translateY(-3px); box-shadow: 0 12px 28px -8px rgba(99,102,241,0.25); border-color: var(--color-primary); }
+    .visit-card.active {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12), 0 12px 28px -8px rgba(99,102,241,0.3);
+      background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(139,92,246,0.04));
+    }
+    .visit-card .order-badge {
+      position: absolute; top: 14px; right: 14px;
+      width: 32px; height: 32px; border-radius: 10px;
+      background: var(--gradient-primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 14px;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+    }
+    .visit-card .time-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 600;
+      color: var(--color-primary);
+      background: var(--color-primary-soft);
+      padding: 3px 8px; border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    .visit-card .company-name {
+      font-size: 16px; font-weight: 700; color: var(--color-text);
+      margin-bottom: 6px; line-height: 1.3;
+      padding-right: 36px;
+    }
+    .visit-card .meta-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--color-text-soft);
+      margin-bottom: 12px;
+    }
+    .visit-card .score-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: linear-gradient(135deg, #0052D9, #7C3AED);
+      color: white; font-weight: 800; font-size: 13px;
+      padding: 4px 10px; border-radius: 8px;
+    }
+    .visit-card .scenarios-label {
+      font-size: 11px; font-weight: 600; color: var(--color-text-soft);
+      margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .visit-card .scenarios-list {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      margin-bottom: 12px;
+    }
+    .visit-card .scenario-chip {
+      font-size: 11px; font-weight: 500;
+      padding: 3px 8px; border-radius: 6px;
+      background: rgba(99,102,241,0.08);
+      color: var(--color-primary);
+    }
+    .visit-card .travel-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 10px; border-top: 1px dashed var(--color-border);
+      font-size: 12px;
+    }
+    .visit-card .travel-info { color: var(--color-text-soft); display: flex; align-items: center; gap: 6px; }
+    .visit-card .travel-info b { color: var(--color-text); font-weight: 700; }
+    .visit-card .kp-tag {
+      font-size: 11px; color: var(--color-text-soft);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .visit-card .kp-tag b { color: var(--color-primary); font-weight: 600; }
+
+    /* Sailing Board */
+    .sailing-board {
+      position: relative; height: 540px;
+      background: linear-gradient(135deg, #F0F4FF 0%, #FAF5FF 50%, #F0FBFF 100%);
+      border-radius: 18px;
+      border: 1px solid var(--color-border);
+      overflow: hidden;
+    }
+    .sailing-board .map-svg { width: 100%; height: 100%; display: block; }
+    .sailing-overlay {
+      position: absolute; top: 16px; left: 16px; z-index: 5;
+      background: var(--color-surface-strong); backdrop-filter: blur(20px);
+      border: 1px solid var(--color-border); border-radius: 14px;
+      padding: 12px 16px; max-width: 240px;
+    }
+    .sailing-overlay-title { font-size: 11px; font-weight: 700; color: var(--color-text-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .sailing-overlay-name { font-size: 15px; font-weight: 700; color: var(--color-text); margin-bottom: 4px; }
+    .sailing-overlay-meta { font-size: 12px; color: var(--color-text-soft); }
+
+    .sailing-stats {
+      position: absolute; bottom: 16px; left: 16px; right: 16px; z-index: 5;
+      display: flex; align-items: center; gap: 12px;
+      background: var(--color-surface-strong); backdrop-filter: blur(20px);
+      border: 1px solid var(--color-border); border-radius: 14px;
+      padding: 14px 20px;
+    }
+    .sailing-stat { display: flex; align-items: center; gap: 8px; }
+    .sailing-stat-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--color-primary-soft); color: var(--color-primary); display: flex; align-items: center; justify-content: center; }
+    .sailing-stat-info .label { font-size: 10px; color: var(--color-text-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+    .sailing-stat-info .value { font-size: 14px; font-weight: 700; color: var(--color-text); }
+    .sailing-divider { width: 1px; height: 24px; background: var(--color-border); }
+    .sailing-progress { flex: 1; height: 6px; background: var(--color-border); border-radius: 3px; overflow: hidden; }
+    .sailing-progress-bar { height: 100%; background: var(--gradient-primary); border-radius: 3px; transition: width 0.4s ease; }
+
+    /* Company Info Panel */
+    .company-info-panel {
+      height: 540px;
+      background: var(--color-surface-strong);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--color-border);
+      border-radius: 18px;
+      padding: 20px 22px;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .company-info-header {
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 16px; margin-bottom: 16px;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .company-info-order {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: var(--gradient-primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800;
+      box-shadow: 0 6px 16px rgba(99,102,241,0.3);
+    }
+    .company-info-title { flex: 1; min-width: 0; }
+    .company-info-name { font-size: 17px; font-weight: 700; color: var(--color-text); line-height: 1.2; margin-bottom: 4px; }
+    .company-info-sub { font-size: 12px; color: var(--color-text-soft); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .company-info-score {
+      text-align: right; flex-shrink: 0;
+    }
+    .company-info-score-val { font-size: 22px; font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
+    .company-info-score-label { font-size: 10px; color: var(--color-text-soft); text-transform: uppercase; margin-top: 2px; }
+
+    .company-info-body { flex: 1; overflow-y: auto; padding-right: 4px; }
+    .info-section { margin-bottom: 18px; }
+    .info-section:last-child { margin-bottom: 0; }
+    .info-label { font-size: 11px; font-weight: 700; color: var(--color-text-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .info-label::before { content: ''; width: 3px; height: 12px; background: var(--gradient-primary); border-radius: 2px; }
+    .info-row { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--color-text); line-height: 1.5; margin-bottom: 4px; }
+    .info-row .key { color: var(--color-text-soft); flex-shrink: 0; min-width: 56px; }
+    .info-row .val { color: var(--color-text); flex: 1; word-break: break-all; }
+    .scenario-list { display: flex; flex-direction: column; gap: 6px; }
+    .scenario-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 10px;
+      background: var(--color-primary-soft);
+      font-size: 13px; font-weight: 500; color: var(--color-primary);
+    }
+    .scenario-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-primary); }
+    .pain-list { display: flex; flex-direction: column; gap: 4px; }
+    .pain-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12px; color: var(--color-text); line-height: 1.5;
+    }
+    .pain-item::before { content: '⚠'; color: #F59E0B; flex-shrink: 0; }
+    .kp-list { display: flex; flex-direction: column; gap: 6px; }
+    .kp-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; border-radius: 10px;
+      background: var(--color-bg);
+    }
+    .kp-order {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--gradient-primary); color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800;
+    }
+    .kp-info { flex: 1; }
+    .kp-role { font-size: 13px; font-weight: 600; color: var(--color-text); }
+    .kp-note { font-size: 11px; color: var(--color-text-soft); }
+
+    .company-info-actions {
+      display: flex; gap: 8px;
+      padding-top: 16px; margin-top: 16px;
+      border-top: 1px solid var(--color-border);
+    }
+    .company-info-actions .btn { flex: 1; justify-content: center; }
+
+    /* Hero compact */
+    .hero-compact {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; margin-bottom: 18px;
+      background: var(--gradient-hero);
+      border-radius: 18px; color: white;
+      position: relative; overflow: hidden;
+    }
+    .hero-compact::before {
+      content: ''; position: absolute; right: -40px; top: -40px;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+    }
+    .hero-compact::after {
+      content: ''; position: absolute; right: 40px; bottom: -60px;
+      width: 160px; height: 160px; border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+    }
+    .hero-compact-left { z-index: 1; }
+    .hero-compact-greeting { font-size: 13px; opacity: 0.9; margin-bottom: 6px; }
+    .hero-compact-title { font-size: 22px; font-weight: 800; line-height: 1.2; margin-bottom: 4px; }
+    .hero-compact-meta { font-size: 12px; opacity: 0.85; display: flex; align-items: center; gap: 14px; }
+    .hero-compact-meta-item { display: flex; align-items: center; gap: 4px; }
+    .hero-compact-right { z-index: 1; display: flex; gap: 24px; align-items: center; }
+    .hero-compact-stat { text-align: center; }
+    .hero-compact-stat-val { font-size: 28px; font-weight: 800; line-height: 1; }
+    .hero-compact-stat-label { font-size: 11px; opacity: 0.85; margin-top: 4px; }
+
+    @media (max-width: 1100px) {
+      .visit-cards-row { grid-template-columns: 1fr; }
+      .sailing-layout { grid-template-columns: 1fr !important; }
+      .sailing-board, .company-info-panel { height: 460px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">销售工作台</h1>
+          <p class="page-subtitle">今日工作全景 · 拜访航线 · 客户详情</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn-icon-theme mobile-menu-btn" id="mobile-menu-btn" title="菜单">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <button class="btn-icon-theme" id="theme-btn" title="切换主题">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3a9 9c0 9 9 9 9c0 .46-.04.92-.1 1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+          </button>
+          <a href="companies.html" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            查看企业清单
+          </a>
+        </div>
+      </div>
+
+      <!-- Hero 紧凑 -->
+      <div class="hero-compact" id="hero-compact">
+        <div class="hero-compact-left">
+          <div class="hero-compact-greeting" id="greeting">早上好，Andrew 👋</div>
+          <div class="hero-compact-title" id="hero-title">今天有 3 家 A 类客户等你拜访</div>
+          <div class="hero-compact-meta" id="hero-meta"></div>
+        </div>
+        <div class="hero-compact-right">
+          <div class="hero-compact-stat">
+            <div class="hero-compact-stat-val" id="hero-stops">3</div>
+            <div class="hero-compact-stat-label">拜访站点</div>
+          </div>
+          <div class="hero-compact-stat">
+            <div class="hero-compact-stat-val" id="hero-distance">10.8</div>
+            <div class="hero-compact-stat-label">总公里数</div>
+          </div>
+          <div class="hero-compact-stat">
+            <div class="hero-compact-stat-val" id="hero-time">2h</div>
+            <div class="hero-compact-stat-label">预计耗时</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Static Cards: 3 家拜访目标 -->
+      <div class="visit-cards-row" id="visit-cards-row"></div>
+
+      <!-- Sailing Board + Company Info -->
+      <div class="grid sailing-layout" style="grid-template-columns: 1.4fr 1fr; gap: 20px;">
+        <!-- Sailing Board 地图 -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div style="padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--color-border);">
+            <h3 class="flex items-center gap-3" style="font-size: 14px;">
+              <span style="width: 4px; height: 16px; background: var(--gradient-primary); border-radius: 4px;"></span>
+              今日航行路线
+            </h3>
+            <div style="font-size: 11px; color: var(--color-text-soft);">点击站点切换右侧详情</div>
+          </div>
+          <div class="sailing-board" id="sailing-board">
+            <svg class="map-svg" viewBox="0 0 680 600" preserveAspectRatio="xMidYMid meet" id="sailing-svg">
+              <defs>
+                <linearGradient id="seaGrad2" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#E0EFFF" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#F0F8FF" stop-opacity="0.2"/>
+                </linearGradient>
+                <linearGradient id="routeGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#0052D9"/>
+                  <stop offset="50%" stop-color="#6366F1"/>
+                  <stop offset="100%" stop-color="#7C3AED"/>
+                </linearGradient>
+                <filter id="pointGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#6366F1" flood-opacity="0.5"/>
+                </filter>
+                <marker id="arrowhead2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L9,3 z" fill="#6366F1"/>
+                </marker>
+              </defs>
+
+              <!-- 海面背景 -->
+              <rect width="680" height="600" fill="url(#seaGrad2)"/>
+
+              <!-- 简化商区轮廓（淡色背景） -->
+              <g id="district-shapes" opacity="0.5"></g>
+
+              <!-- 路线（动态绘制） -->
+              <g id="route-lines"></g>
+
+              <!-- 站点（动态绘制） -->
+              <g id="route-points"></g>
+            </svg>
+
+            <!-- 浮动信息卡 -->
+            <div class="sailing-overlay" id="sailing-overlay"></div>
+
+            <!-- 底部统计条 -->
+            <div class="sailing-stats">
+              <div class="sailing-stat">
+                <div class="sailing-stat-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2L4 7v6c0 5 3.5 9.5 8 11 4.5-1.5 8-6 8-11V7l-8-5z"/></svg>
+                </div>
+                <div class="sailing-stat-info">
+                  <div class="label">起点</div>
+                  <div class="value">腾讯大厦</div>
+                </div>
+              </div>
+              <div class="sailing-divider"></div>
+              <div class="sailing-stat">
+                <div class="sailing-stat-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+                </div>
+                <div class="sailing-stat-info">
+                  <div class="label">总距离</div>
+                  <div class="value" id="sailing-total-dist">—</div>
+                </div>
+              </div>
+              <div class="sailing-divider"></div>
+              <div class="sailing-stat">
+                <div class="sailing-stat-icon">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4 11h-4V7h2v4h2v2z"/></svg>
+                </div>
+                <div class="sailing-stat-info">
+                  <div class="label">预计完成</div>
+                  <div class="value" id="sailing-finish">—</div>
+                </div>
+              </div>
+              <div class="sailing-divider"></div>
+              <div class="sailing-progress">
+                <div class="sailing-progress-bar" id="sailing-progress" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Company Info 详情面板 -->
+        <div class="company-info-panel" id="company-info-panel"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    WB.initShell('dashboard');
+
+    const route = WB_DATA.TODAY_ROUTE;
+    const allCompanies = WB.companies();
+
+    // ====== 顶部 Hero ======
+    const hour = new Date().getHours();
+    const greetEl = document.getElementById('greeting');
+    if (hour < 11) greetEl.textContent = '早上好，Andrew 👋';
+    else if (hour < 14) greetEl.textContent = '中午好，Andrew ☀️';
+    else if (hour < 18) greetEl.textContent = '下午好，Andrew 🌤️';
+    else greetEl.textContent = '晚上好，Andrew 🌙';
+
+    document.getElementById('hero-title').textContent = route.greeting;
+    document.getElementById('hero-meta').innerHTML = `
+      <span class="hero-compact-meta-item">📅 ${route.date} · ${route.weekday}</span>
+      <span class="hero-compact-meta-item">☀️ ${route.weather}</span>
+      <span class="hero-compact-meta-item">👤 ${route.salesPerson}</span>
+    `;
+    document.getElementById('hero-stops').textContent = route.visits.length;
+    document.getElementById('hero-distance').textContent = route.totalDistance;
+    document.getElementById('hero-time').textContent = Math.floor((route.totalDriveTime + route.totalVisitTime) / 60) + 'h' + ((route.totalDriveTime + route.totalVisitTime) % 60) + 'min';
+
+    // 底部统计条
+    document.getElementById('sailing-total-dist').textContent = route.totalDistance + ' km';
+    document.getElementById('sailing-finish').textContent = route.estimatedFinishTime;
+    // 进度条：当前时间到 17:30 的比例
+    const now = new Date();
+    const finishTime = new Date();
+    const [fh, fm] = route.estimatedFinishTime.split(':').map(Number);
+    finishTime.setHours(fh, fm, 0);
+    const startOfDay = new Date(); startOfDay.setHours(9, 0, 0);
+    const dayProgress = Math.min(100, Math.max(0, ((now - startOfDay) / (finishTime - startOfDay)) * 100));
+    document.getElementById('sailing-progress').style.width = dayProgress.toFixed(1) + '%';
+
+    // ====== 工具：坐标转 SVG 坐标 ======
+    // 深圳经纬度范围：lng 113.85-114.10, lat 22.45-22.60
+    // SVG viewBox: 680 × 600
+    function lngLatToXY(lng, lat) {
+      const minLng = 113.85, maxLng = 114.10;
+      const minLat = 22.45, maxLat = 22.62;
+      const x = ((lng - minLng) / (maxLng - minLng)) * 680;
+      // 注意 lat 越大 y 越小（北在屏幕上方）
+      const y = ((maxLat - lat) / (maxLat - minLat)) * 600;
+      return { x, y };
+    }
+
+    // ====== 简化商区轮廓（矩形+圆角）======
+    // 真实深圳 8 大商区的大致经纬度
+    const districtShapes = [
+      { id:'d8', name:'蛇口/华侨城', x:100, y:480, w:90, h:60, fill:'#FAF5FF' },
+      { id:'d3', name:'前海合作区', x:140, y:240, w:90, h:90, fill:'#F0FBFF' },
+      { id:'d5', name:'宝安中心', x:110, y:120, w:110, h:90, fill:'#FFF7ED' },
+      { id:'d1', name:'南山科技园', x:280, y:230, w:100, h:100, fill:'#EEF2FF' },
+      { id:'d2', name:'深圳湾/后海', x:290, y:340, w:100, h:80, fill:'#FAF5FF' },
+      { id:'d4', name:'福田 CBD', x:430, y:230, w:90, h:100, fill:'#FEF3C7' },
+      { id:'d6', name:'龙华/坂田', x:460, y:80, w:90, h:110, fill:'#F0FDF4' },
+      { id:'d7', name:'龙岗坂雪岗', x:560, y:60, w:90, h:140, fill:'#ECFEFF' }
+    ];
+    document.getElementById('district-shapes').innerHTML = districtShapes.map(d => `
+      <rect x="${d.x}" y="${d.y}" width="${d.w}" height="${d.h}" rx="14" fill="${d.fill}" stroke="#CBD5E1" stroke-width="1" stroke-dasharray="4 3"/>
+      <text x="${d.x + d.w/2}" y="${d.y + d.h/2 + 4}" text-anchor="middle" font-size="10" fill="#94A3B8" font-weight="600" font-family="system-ui">${d.name}</text>
+    `).join('');
+
+    // ====== 计算所有站点坐标 ======
+    const start = lngLatToXY(route.startPoint.lng, route.startPoint.lat);
+    const stops = route.visits.map(v => {
+      const c = WB.getCompany(v.companyId);
+      if (!c) return null;
+      const pos = lngLatToXY(c.lng, c.lat);
+      return { ...v, company: c, x: pos.x, y: pos.y };
+    }).filter(Boolean);
+
+    // ====== 绘制路线（虚线带箭头）======
+    let routePath = `M ${start.x} ${start.y}`;
+    stops.forEach(s => { routePath += ` L ${s.x} ${s.y}`; });
+    document.getElementById('route-lines').innerHTML = `
+      <path d="${routePath}" stroke="url(#routeGrad)" stroke-width="3" fill="none" stroke-dasharray="6 4" stroke-linecap="round" marker-end="url(#arrowhead2)" opacity="0.85"/>
+    `;
+
+    // ====== 绘制站点 ======
+    const pointsG = document.getElementById('route-points');
+    // 起点（星形）
+    pointsG.innerHTML = `
+      <!-- 起点星形 -->
+      <g transform="translate(${start.x}, ${start.y})" filter="url(#pointGlow)">
+        <circle r="14" fill="#10B981" opacity="0.25"/>
+        <circle r="10" fill="#10B981"/>
+        <path d="M 0,-6 L 1.8,-1.8 L 6,-1.8 L 2.5,1 L 4,6 L 0,3 L -4,6 L -2.5,1 L -6,-1.8 L -1.8,-1.8 Z" fill="white"/>
+        <text y="26" text-anchor="middle" font-size="11" font-weight="700" fill="#065F46" font-family="system-ui">起点</text>
+      </g>
+    `;
+    // 3 个拜访站点（数字徽章）
+    stops.forEach((s, i) => {
+      pointsG.innerHTML += `
+        <g transform="translate(${s.x}, ${s.y})" data-stop="${i}" class="route-stop" style="cursor: pointer;" filter="url(#pointGlow)">
+          <circle r="18" fill="#6366F1" opacity="0.2" class="stop-halo"/>
+          <circle r="13" fill="url(#routeGrad)"/>
+          <text y="5" text-anchor="middle" font-size="14" font-weight="800" fill="white" font-family="system-ui">${s.order}</text>
+          <text y="32" text-anchor="middle" font-size="11" font-weight="700" fill="#1E293B" font-family="system-ui">${s.company.name.substring(0, 6)}${s.company.name.length > 6 ? '…' : ''}</text>
+        </g>
+      `;
+    });
+
+    // ====== Static Cards 渲染 ======
+    const cardsRow = document.getElementById('visit-cards-row');
+    function renderVisitCards() {
+      cardsRow.innerHTML = route.visits.map((v, i) => {
+        const c = WB.getCompany(v.companyId);
+        const level = WB.getLevel(c.workbuddyScore);
+        const kpList = WB_DATA.INITIAL_CONTACTS.filter(k => k.companyId === v.companyId);
+        const primaryKp = kpList[0];
+        return `
+          <div class="visit-card ${i === 0 ? 'active' : ''}" data-index="${i}" onclick="selectStop(${i})">
+            <div class="order-badge">${v.order}</div>
+            <div class="time-tag">🕐 推荐 ${v.recommendedTime}</div>
+            <div class="company-name">${WB.escapeHtml(c.name)}</div>
+            <div class="meta-row">
+              <span class="score-pill">⭐ ${c.workbuddyScore} · A 类</span>
+              <span>· ${WB.escapeHtml(c.industry)}</span>
+              <span>· ${WB.getDistrictName(c.districtId)}</span>
+            </div>
+            <div class="scenarios-label">🧩 涉及 WorkBuddy 机会</div>
+            <div class="scenarios-list">
+              ${c.recommendedScenarios.slice(0, 3).map(s => `<span class="scenario-chip">${WB.escapeHtml(s)}</span>`).join('')}
+            </div>
+            <div class="travel-row">
+              <div class="travel-info">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/></svg>
+                <span><b>${v.distanceFromPrev} km</b> · ${v.estimatedDriveTime} 分钟</span>
+              </div>
+              <div class="kp-tag">
+                <span>KP</span>
+                <b>${primaryKp ? WB.escapeHtml(primaryKp.role) : '待接触'}</b>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    renderVisitCards();
+
+    // ====== Company Info Panel 渲染 ======
+    const infoPanel = document.getElementById('company-info-panel');
+    const overlay = document.getElementById('sailing-overlay');
+
+    function renderCompanyInfo(idx) {
+      const stop = stops[idx];
+      const c = stop.company;
+      const kpList = WB_DATA.INITIAL_CONTACTS.filter(k => k.companyId === c.id);
+      // 该行业痛点
+      const painPoints = WB.getPainPoints(c.industry);
+
+      infoPanel.innerHTML = `
+        <div class="company-info-header">
+          <div class="company-info-order">${stop.order}</div>
+          <div class="company-info-title">
+            <div class="company-info-name">${WB.escapeHtml(c.name)}</div>
+            <div class="company-info-sub">
+              <span>📍 ${WB.getDistrictName(c.districtId)}</span>
+              <span>·</span>
+              <span>${WB.escapeHtml(c.industry)}</span>
+            </div>
+          </div>
+          <div class="company-info-score">
+            <div class="company-info-score-val">${c.workbuddyScore}</div>
+            <div class="company-info-score-label">A 类</div>
+          </div>
+        </div>
+
+        <div class="company-info-body">
+          <div class="info-section">
+            <div class="info-label">基础信息</div>
+            <div class="info-row"><span class="key">地址</span><span class="val">${WB.escapeHtml(c.address)}</span></div>
+            <div class="info-row"><span class="key">规模</span><span class="val">${WB.escapeHtml(c.companySize)} · 成立于 ${c.foundedYear}</span></div>
+            <div class="info-row"><span class="key">行业</span><span class="val">${WB.escapeHtml(c.industry)} / ${WB.escapeHtml(c.subIndustry)}</span></div>
+            <div class="info-row"><span class="key">建议</span><span class="val">🕐 ${stop.recommendedTime} 到达 · ${stop.travelNote}</span></div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">涉及 WorkBuddy 机会</div>
+            <div class="scenario-list">
+              ${c.recommendedScenarios.map((s, i) => `
+                <div class="scenario-item">
+                  <span class="dot"></span>
+                  <span>${WB.escapeHtml(s)}${i === 0 ? ' · 重点场景' : ''}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">可能痛点</div>
+            <div class="pain-list">
+              ${painPoints.slice(0, 4).map(p => `<div class="pain-item">${WB.escapeHtml(p)}</div>`).join('')}
+            </div>
+          </div>
+
+          <div class="info-section">
+            <div class="info-label">推荐 KP 攻坚路线</div>
+            <div class="kp-list">
+              ${kpList.map((k, i) => `
+                <div class="kp-item">
+                  <div class="kp-order">${i + 1}</div>
+                  <div class="kp-info">
+                    <div class="kp-role">${WB.escapeHtml(k.role)}${k.name ? ' · ' + WB.escapeHtml(k.name) : ' · 待接触'}</div>
+                    <div class="kp-note">${WB.escapeHtml(k.notes || k.department)}</div>
+                  </div>
+                </div>
+              `).join('') || '<div class="info-row"><span class="val">暂无 KP 信息，请补充</span></div>'}
+            </div>
+          </div>
+        </div>
+
+        <div class="company-info-actions">
+          <a href="company.html?id=${c.id}" class="btn btn-soft">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+            查看完整作战卡
+          </a>
+          <button class="btn btn-soft" onclick="WB.startVisit('${c.id}')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            开始拜访
+          </button>
+          <a href="followups.html?companyId=${c.id}" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg>
+            录跟进
+          </a>
+        </div>
+      `;
+    }
+
+    function renderOverlay(idx) {
+      const stop = stops[idx];
+      const c = stop.company;
+      overlay.innerHTML = `
+        <div class="sailing-overlay-title">第 ${stop.order} 站</div>
+        <div class="sailing-overlay-name">${WB.escapeHtml(c.name)}</div>
+        <div class="sailing-overlay-meta">📍 ${WB.getDistrictName(c.districtId)} · 🕐 ${stop.recommendedTime}</div>
+        <div class="sailing-overlay-meta" style="margin-top: 4px;">⛽ 距上站 ${stop.distanceFromPrev}km · ${stop.estimatedDriveTime}分钟</div>
+      `;
+    }
+
+    // ====== 切换站点 ======
+    let currentIdx = 0;
+    function selectStop(idx) {
+      currentIdx = idx;
+      // 更新卡片 active 状态
+      document.querySelectorAll('.visit-card').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+      // 更新地图站点视觉
+      document.querySelectorAll('.route-stop').forEach((el, i) => {
+        const halo = el.querySelector('.stop-halo');
+        if (halo) halo.setAttribute('r', i === idx ? '24' : '18');
+      });
+      renderOverlay(idx);
+      renderCompanyInfo(idx);
+    }
+
+    // 绑定地图站点点击
+    document.querySelectorAll('.route-stop').forEach((el, i) => {
+      el.addEventListener('click', () => selectStop(i));
+    });
+
+    // 初始化
+    selectStop(0);
+  </script>
+</body>
+</html>

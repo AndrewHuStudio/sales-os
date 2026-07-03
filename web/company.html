@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>客户作战卡 · WorkBuddy GeoSales OS</title>
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%230052D9'/><stop offset='1' stop-color='%237C3AED'/></linearGradient></defs><rect width='100' height='100' rx='22' fill='url(%23g)'/><text x='50' y='66' text-anchor='middle' fill='white' font-size='42' font-weight='800' font-family='-apple-system'>W</text></svg>" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <a href="companies.html" class="text-sm text-soft">← 返回清单</a>
+          </div>
+          <h1 class="page-title" id="company-name">客户作战卡</h1>
+          <p class="page-subtitle" id="company-subtitle">WorkBuddy 适配评分 · KP 攻坚路线 · 触达话术 · 跟进记录</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn-icon-theme mobile-menu-btn" id="mobile-menu-btn" title="菜单">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          </button>
+          <button class="btn-icon-theme" id="theme-btn" title="切换主题">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-3.14-9.8c-.44-.06-.9-.1-1.36-.1z"/></svg>
+          </button>
+          <button class="btn btn-ghost" id="fav-btn">
+            <span id="fav-icon">☆</span>
+            <span id="fav-text">收藏</span>
+          </button>
+          <button class="btn btn-primary" id="add-followup-btn">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            新增跟进
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero：公司名 + 评分 + 基础信息 -->
+      <div class="hero-company" id="hero-company">
+        <div class="hero-company-content">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="hero-industry">SaaS</span>
+            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="hero-district">南山区</span>
+            <span class="badge" style="background: rgba(255,255,255,0.2); color: white;" id="hero-stage">POC 试点</span>
+          </div>
+          <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.02em;" id="hero-name">公司名</div>
+          <div class="hero-company-meta" id="hero-meta"></div>
+        </div>
+        <div class="hero-company-score">
+          <div class="hero-company-score-num num" id="hero-score">88</div>
+          <div class="hero-company-score-label">WorkBuddy Fit</div>
+        </div>
+      </div>
+
+      <!-- 主体：左主右辅 -->
+      <div class="grid" style="grid-template-columns: 1.5fr 1fr; gap: 20px;">
+        <div class="flex-col gap-6">
+          <!-- 评分明细 -->
+          <div class="card">
+            <h3 class="section-title"><span class="section-title-bar"></span>WorkBuddy 适配评分（8 维度）</h3>
+            <div class="text-sm text-soft mb-4" id="score-reason"></div>
+            <div id="score-breakdown"></div>
+          </div>
+
+          <!-- 可能痛点 + 推荐场景 -->
+          <div class="card">
+            <h3 class="section-title"><span class="section-title-bar"></span>可能业务痛点 & 推荐切入场景</h3>
+            <div class="grid grid-2 gap-6">
+              <div>
+                <div class="text-sm font-bold mb-3 flex items-center gap-2">⚠️ 可能痛点</div>
+                <ul id="pain-list" class="flex-col gap-2" style="list-style: none; padding: 0;"></ul>
+              </div>
+              <div>
+                <div class="text-sm font-bold mb-3 flex items-center gap-2">✦ 推荐场景</div>
+                <ul id="scenario-list" class="flex-col gap-2" style="list-style: none; padding: 0;"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- KP 攻坚路线 -->
+          <div class="card">
+            <h3 class="section-title"><span class="section-title-bar"></span>KP 攻坚路线（6 步）</h3>
+            <div id="kp-route" class="mt-3"></div>
+          </div>
+
+          <!-- 跟进记录 -->
+          <div class="card">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="section-title" style="margin: 0;"><span class="section-title-bar"></span>跟进记录</h3>
+              <span class="text-sm text-muted" id="followup-count">0 条</span>
+            </div>
+            <div id="followup-list"></div>
+          </div>
+        </div>
+
+        <div class="flex-col gap-6">
+          <!-- 联系人 -->
+          <div class="card">
+            <h3 class="section-title"><span class="section-title-bar"></span>关键联系人</h3>
+            <div id="contacts-list" class="flex-col gap-3"></div>
+            <div class="text-xs text-muted mt-3">⚠️ 联系信息以角色为主，符合数据合规要求</div>
+          </div>
+
+          <!-- AI 话术生成 -->
+          <div class="card" style="background: var(--gradient-primary-soft); border: 1px solid var(--color-primary);">
+            <h3 class="section-title"><span class="section-title-bar"></span>AI 触达话术</h3>
+            <div class="form-group mb-3">
+              <label class="form-label">目标 KP</label>
+              <select class="form-control" id="script-kp">
+                <option value="业务负责人">业务负责人</option>
+                <option value="CEO">CEO / 总经理</option>
+                <option value="COO">COO</option>
+                <option value="销售负责人">销售负责人</option>
+                <option value="市场负责人">市场负责人</option>
+                <option value="IT 负责人">IT 负责人</option>
+                <option value="HR 负责人">HR 负责人</option>
+                <option value="采购">采购负责人</option>
+              </select>
+            </div>
+            <div class="form-group mb-3">
+              <label class="form-label">触达类型</label>
+              <select class="form-control" id="script-type">
+                <option value="微信">微信</option>
+                <option value="电话">电话</option>
+                <option value="邮件">邮件</option>
+                <option value="会议">会议</option>
+              </select>
+            </div>
+            <button class="btn btn-primary w-full" id="gen-script-btn">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2L9.5 7.5 4 9.5l5.5 5.5L7 22l5-3 5 3-2.5-7 5.5-5.5-5.5-2z"/></svg>
+              生成话术
+            </button>
+            <div id="script-output" class="mt-4 hidden">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-muted" id="script-source"></span>
+                <button class="btn btn-ghost btn-sm" id="copy-script-btn">复制</button>
+              </div>
+              <div class="script-card">
+                <div class="script-content" id="script-content"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 数字化信号 -->
+          <div class="card">
+            <h3 class="section-title"><span class="section-title-bar"></span>数字化信号</h3>
+            <div id="signals-list" class="flex-col gap-2"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 新增跟进 Modal -->
+  <div class="modal-backdrop hidden" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">新增跟进记录</div>
+        <button class="modal-close" id="modal-close">✕</button>
+      </div>
+      <div class="form-group mb-3">
+        <label class="form-label">自然语言输入（系统将自动结构化）</label>
+        <textarea class="form-control" id="fu-text" rows="5" placeholder="例如：今天和 XX 公司市场负责人沟通 30 分钟，对方对销售方案生成和会议纪要感兴趣，但担心价格和数据安全。对方建议下周让 IT 一起参加。"></textarea>
+      </div>
+      <div class="form-group mb-3">
+        <label class="form-label">沟通方式</label>
+        <select class="form-control" id="fu-channel">
+          <option value="微信">微信</option>
+          <option value="电话">电话</option>
+          <option value="会议">会议</option>
+          <option value="邮件">邮件</option>
+          <option value="面谈">面谈</option>
+        </select>
+      </div>
+      <div class="form-group mb-3">
+        <label class="form-label">沟通对象角色</label>
+        <input class="form-control" id="fu-role" placeholder="如：市场负责人" />
+      </div>
+      <div class="form-group mb-3">
+        <label class="form-label">下次跟进时间</label>
+        <input class="form-control" id="fu-date" type="date" />
+      </div>
+      <div id="ai-suggest" class="ai-tip mb-3 hidden">
+        <div id="ai-suggest-content"></div>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button class="btn btn-ghost" id="ai-summarize-btn">
+          <span>✦</span> AI 总结
+        </button>
+        <button class="btn btn-primary" id="save-followup-btn">保存记录</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    WB.initShell('companies');
+
+    const companyId = WB.urlParam('id') || 'c11';
+    const company = WB.getCompany(companyId);
+    if (!company) {
+      document.querySelector('.main').innerHTML = '<div class="empty"><div class="empty-icon">😢</div><div>企业不存在</div><a href="companies.html" class="btn btn-primary mt-3">返回清单</a></div>';
+    } else {
+      renderCompany();
+    }
+
+    function renderCompany() {
+      document.title = company.name + ' · 客户作战卡';
+      document.getElementById('company-name').textContent = company.name;
+      document.getElementById('company-subtitle').textContent = `${company.industry} · ${company.subIndustry} · ${company.companySize}`;
+
+      // Hero
+      document.getElementById('hero-industry').textContent = company.industry;
+      document.getElementById('hero-district').textContent = WB.getDistrictName(company.districtId);
+      document.getElementById('hero-stage').textContent = WB.getStageName(company.currentStage);
+      document.getElementById('hero-name').textContent = company.name;
+      document.getElementById('hero-score').textContent = company.workbuddyScore;
+      document.getElementById('hero-meta').innerHTML = `
+        <span>📍 ${company.address}</span>
+        <span>👥 ${company.companySize}</span>
+        <span>📅 成立 ${company.foundedYear}</span>
+        <span>🌐 <a href="${company.website}" target="_blank" style="color: rgba(255,255,255,0.9); text-decoration: underline;">${company.website.replace(/^https?:\/\//, '')}</a></span>
+      `;
+
+      // 收藏
+      const isFav = WB.isFav(company.id);
+      document.getElementById('fav-icon').textContent = isFav ? '★' : '☆';
+      document.getElementById('fav-text').textContent = isFav ? '已收藏' : '收藏';
+      document.getElementById('fav-btn').onclick = () => {
+        WB.toggleFav(company.id);
+        renderCompany();
+        WB.toast(WB.isFav(company.id) ? '已加入收藏' : '已取消收藏');
+      };
+
+      // 评分理由 + 明细
+      const level = WB.getLevel(company.workbuddyScore);
+      document.getElementById('score-reason').innerHTML = `
+        <div class="flex items-center gap-2 mb-2">
+          <span class="badge level-${level.id}">${level.name} 客户</span>
+          <span class="text-xs text-muted">总分 ${company.workbuddyScore} / 100</span>
+        </div>
+        该企业属于 <strong>${company.industry}</strong> 行业（${company.subIndustry}），企业规模 ${company.companySize}，主要痛点集中在 <strong>${company.painPoints.slice(0, 2).join('、')}</strong>。结合 WorkBuddy 的 <strong>${company.recommendedScenarios.slice(0, 2).join('、')}</strong> 能力，可作为 <strong>${level.id} 类</strong>客户 ${level.id === 'A' ? '优先攻坚' : level.id === 'B' ? '培育跟进' : '暂缓观察'}。
+      `;
+      document.getElementById('score-breakdown').innerHTML = WB.fullScoreBreakdown(company.scoreBreakdown);
+
+      // 痛点 + 场景
+      document.getElementById('pain-list').innerHTML = company.painPoints.map(p => `
+        <li class="flex items-start gap-2 text-sm" style="padding: 6px 0;">
+          <span style="color: var(--color-warning); flex-shrink: 0; margin-top: 2px;">⚠</span>
+          <span>${WB.escapeHtml(p)}</span>
+        </li>
+      `).join('');
+      document.getElementById('scenario-list').innerHTML = company.recommendedScenarios.map(s => `
+        <li class="flex items-center gap-2" style="padding: 6px 0;">
+          <span class="badge badge-primary" style="flex-shrink: 0;">${WB.escapeHtml(s)}</span>
+        </li>
+      `).join('');
+
+      // KP 攻坚路线
+      const kpRoute = [
+        { num: 1, role: '业务痛点拥有者', who: `${company.industry} 部门负责人`, goal: `快速展示 ${company.recommendedScenarios[0]} 场景的 demo，让业务方感受到 WorkBuddy 价值`, materials: '同行业案例 + POC 方案' },
+        { num: 2, role: '寻找 Champion', who: '中层管理者 / 业务骨干', goal: '找到一个愿意主动推动试点的内部人，借助其影响力推进', materials: 'Champion 礼包 + 内部推动话术' },
+        { num: 3, role: 'IT / 信息安全', who: 'IT 负责人 / CISO', goal: '提前处理数据安全、权限、账号、知识库治理等顾虑', materials: '数据安全白皮书 + 私有化部署方案' },
+        { num: 4, role: '部门负责人 / COO', who: 'COO / 业务 VP', goal: '将部门提效问题上升为组织效率问题，争取更高层支持', materials: '跨部门提效报告 + ROI 测算' },
+        { num: 5, role: '采购 / 财务', who: '采购经理 / CFO', goal: '确定试点人数、周期、预算和合同流程', materials: '商务材料 + 合同模板' },
+        { num: 6, role: 'CEO / 总经理', who: 'CEO / 总经理', goal: '获得最终决策，签订合同', materials: '战略汇报版 + 标杆案例' }
+      ];
+      document.getElementById('kp-route').innerHTML = kpRoute.map(k => `
+        <div class="kp-step">
+          <div class="kp-step-num">${k.num}</div>
+          <div class="kp-step-content">
+            <div class="kp-step-title">第 ${k.num} 步：${k.role}</div>
+            <div class="kp-step-desc">
+              <strong>建议对象：</strong>${WB.escapeHtml(k.who)}<br />
+              <strong>沟通目标：</strong>${WB.escapeHtml(k.goal)}<br />
+              <strong>需要材料：</strong>${WB.escapeHtml(k.materials)}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // 联系人
+      const contacts = (data().INITIAL_CONTACTS || []).filter(k => k.companyId === company.id);
+      document.getElementById('contacts-list').innerHTML = contacts.length === 0
+        ? '<div class="text-sm text-muted">暂无联系人记录，建议补充</div>'
+        : contacts.map(k => `
+          <div class="card-glass" style="padding: 12px 14px;">
+            <div class="flex items-center justify-between mb-1">
+              <div class="font-semibold text-sm">${WB.escapeHtml(k.name || '(未填)')} · ${WB.escapeHtml(k.role)}</div>
+              <span class="badge ${k.attitude === '支持' ? 'badge-success' : k.attitude === '反对' ? 'badge-danger' : 'badge-neutral'}">${k.attitude}</span>
+            </div>
+            <div class="text-xs text-muted">${WB.escapeHtml(k.department)} · 影响度：${k.influence}</div>
+            ${k.notes ? `<div class="text-xs mt-2" style="color: var(--color-text-soft);">📝 ${WB.escapeHtml(k.notes)}</div>` : ''}
+          </div>
+        `).join('');
+
+      // 数字化信号
+      document.getElementById('signals-list').innerHTML = company.signals.map(s => `
+        <div class="flex items-start gap-2 text-sm" style="padding: 6px 0;">
+          <span style="color: var(--color-success); flex-shrink: 0; margin-top: 1px;">●</span>
+          <span>${WB.escapeHtml(s)}</span>
+        </div>
+      `).join('');
+
+      // 跟进记录
+      const fus = WB.followupsForCompany(company.id);
+      document.getElementById('followup-count').textContent = fus.length + ' 条';
+      const fl = document.getElementById('followup-list');
+      if (fus.length === 0) {
+        fl.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><div class="text-sm">暂无跟进记录</div><div class="text-xs text-muted mt-2">点击右上角"新增跟进"开始</div></div>';
+      } else {
+        fl.innerHTML = fus.map(f => `
+          <div class="card-glass mb-3" style="padding: 16px;">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="badge badge-${WB.getStage(f.stage).color}">${WB.getStageName(f.stage)}</span>
+                <span class="badge badge-neutral">${f.channel}</span>
+                <span class="text-xs text-muted">${WB.fmtDate(f.followupTime, true)}</span>
+              </div>
+              <button class="text-xs text-muted" onclick="if(confirm('确认删除？')){WB.deleteFollowup('${f.id}');renderCompany();}">删除</button>
+            </div>
+            <div class="text-sm mb-2" style="line-height: 1.6;">
+              <strong>${WB.escapeHtml(f.contactRole)}${f.contactName ? ' · ' + WB.escapeHtml(f.contactName) : ''}：</strong>
+              ${WB.escapeHtml(f.summary)}
+            </div>
+            ${f.customerInterest && f.customerInterest.length > 0 ? `
+              <div class="text-xs text-soft mb-1">✓ 客户关注：${f.customerInterest.map(i => `<span class="badge badge-primary" style="font-size: 10px;">${i}</span>`).join(' ')}</div>
+            ` : ''}
+            ${f.objections && f.objections.length > 0 ? `
+              <div class="text-xs text-soft mb-1">⚠ 客户异议：${f.objections.map(o => `<span class="badge badge-warning" style="font-size: 10px;">${o}</span>`).join(' ')}</div>
+            ` : ''}
+            <div class="text-xs text-soft mt-2"><strong>下一步：</strong>${WB.escapeHtml(f.nextAction || '—')}</div>
+            <div class="text-xs text-muted mt-1">下次跟进：${WB.relativeDate(f.nextFollowupDate)}</div>
+          </div>
+        `).join('');
+      }
+    }
+
+    // ---------- AI 话术生成 ----------
+    document.getElementById('gen-script-btn').addEventListener('click', () => {
+      const kpRole = document.getElementById('script-kp').value;
+      const scriptType = document.getElementById('script-type').value;
+      const scenario = company.recommendedScenarios[0] || '客户方案生成';
+      const result = WB.generateScript(company, kpRole, scenario, scriptType);
+      document.getElementById('script-content').textContent = result.content;
+      document.getElementById('script-source').textContent = result.source === 'matched' ? `✓ 精确匹配 · 效果分 ${result.score}` : result.source === 'fallback' ? 'AI 实时生成' : `智能匹配 · 效果分 ${result.score}`;
+      document.getElementById('script-output').classList.remove('hidden');
+    });
+
+    document.getElementById('copy-script-btn').addEventListener('click', () => {
+      const text = document.getElementById('script-content').textContent;
+      navigator.clipboard.writeText(text).then(() => WB.toast('话术已复制到剪贴板'));
+    });
+
+    // ---------- 新增跟进 ----------
+    const modal = document.getElementById('add-modal');
+    document.getElementById('add-followup-btn').addEventListener('click', () => {
+      modal.classList.remove('hidden');
+      document.getElementById('fu-text').value = '';
+      document.getElementById('fu-role').value = '市场负责人';
+      const today = new Date();
+      today.setDate(today.getDate() + 3);
+      document.getElementById('fu-date').value = WB.fmtDate(today);
+      document.getElementById('ai-suggest').classList.add('hidden');
+    });
+    document.getElementById('modal-close').addEventListener('click', () => modal.classList.add('hidden'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+
+    document.getElementById('ai-summarize-btn').addEventListener('click', () => {
+      const text = document.getElementById('fu-text').value.trim();
+      if (!text) { WB.toast('请先输入跟进内容', 'error'); return; }
+      const summary = WB.summarizeFollowup(text);
+      if (!summary) { WB.toast('内容太短', 'error'); return; }
+      const suggest = document.getElementById('ai-suggest');
+      const content = document.getElementById('ai-suggest-content');
+      content.innerHTML = `
+        <strong>✦ AI 结构化结果：</strong><br />
+        <strong>摘要：</strong>${WB.escapeHtml(summary.summary)}<br />
+        ${summary.customerInterest.length > 0 ? `<strong>客户关注：</strong>${summary.customerInterest.map(i => `<span class="badge badge-primary" style="font-size: 10px;">${i}</span>`).join(' ')}<br />` : ''}
+        ${summary.objections.length > 0 ? `<strong>客户异议：</strong>${summary.objections.map(o => `<span class="badge badge-warning" style="font-size: 10px;">${o}</span>`).join(' ')}<br />` : ''}
+        <strong>建议阶段：</strong><span class="badge badge-primary">${WB.getStageName(summary.suggestedStage)}</span><br />
+        <strong>下一步：</strong>${WB.escapeHtml(summary.nextAction)}
+      `;
+      suggest.classList.remove('hidden');
+      suggest.dataset.summary = JSON.stringify(summary);
+    });
+
+    document.getElementById('save-followup-btn').addEventListener('click', () => {
+      const text = document.getElementById('fu-text').value.trim();
+      if (!text) { WB.toast('请输入跟进内容', 'error'); return; }
+      const suggest = document.getElementById('ai-suggest');
+      const summary = suggest.dataset.summary ? JSON.parse(suggest.dataset.summary) : WB.summarizeFollowup(text);
+      const fu = {
+        companyId: company.id,
+        followupTime: WB.fmtDate(new Date(), true),
+        contactRole: document.getElementById('fu-role').value || '业务负责人',
+        contactName: null,
+        channel: document.getElementById('fu-channel').value,
+        summary: text,
+        customerInterest: summary.customerInterest || [],
+        objections: summary.objections || [],
+        stage: (summary.suggestedStage || '已沟通').replace(' ', '').replace('已演示', 'demoed').replace('POC', 'poc').replace('已沟通', 'meeting').replace('未触达', 'untouched').replace('商务报价', 'pricing'),
+        nextAction: summary.nextAction,
+        nextFollowupDate: document.getElementById('fu-date').value,
+        materialsNeeded: summary.materialsNeeded || []
+      };
+      WB.addFollowup(fu);
+      modal.classList.add('hidden');
+      WB.toast('跟进记录已保存');
+      renderCompany();
+    });
+  </script>
+</body>
+</html>
